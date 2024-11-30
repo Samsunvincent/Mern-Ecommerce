@@ -15,7 +15,7 @@ function setAccessControl(access_types){
 // Router.post('/addProducts',upload.array('images', 5),setAccessControl('3'),productController.addProducts);
 
 Router.post('/addProducts/:id', upload, productController.addProducts);
-Router.get('/getProducts',productController.getProducts)
+Router.get('/getProducts/:id/:usertype',productController.getProducts)
 
 Router.get('/getAddedProducts/:id',productController.getAddedProducts);
 Router.get('/getSingleViewProduct/:id',productController.getSingleViewProduct)

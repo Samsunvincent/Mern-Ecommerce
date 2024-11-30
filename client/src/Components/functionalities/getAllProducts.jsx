@@ -1,16 +1,15 @@
 import axios from "axios";
 
-const getAllProducts = async function() {
+const getAllProducts = async function (id, usertype) {
     try {
-        const response = await axios.get('http://localhost:3000/getProducts', {
+        const response = await axios.get(`http://localhost:3000/getProducts/${id}/${usertype}`, {
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
         });
-        
-        // Ensure that the response contains a valid array in the 'data' field
+
         const products = response.data.data;
-        
+
         // Log the products to verify the structure
         console.log("Fetched products:", products);
 
@@ -21,7 +20,7 @@ const getAllProducts = async function() {
             return []; // Return an empty array in case of invalid data
         }
     } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
         return []; // Return an empty array in case of an error
     }
 };

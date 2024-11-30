@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 const SignUp = async (body, navigate) => {
     // Check if email and password are provided
     if (!body || !body.email || !body.password) {
@@ -45,16 +46,19 @@ const SignUp = async (body, navigate) => {
 
            
 
+           
+
             console.log("token",token);
 
             // Navigate based on user type
             if (userType === 'Admin') {
-                navigate(`/Admin/${token_key}/${id}`);  // Ensure correct userType check
+                navigate(`/Admin/${token_key}/${id}/${userType}`);
             } else if (userType === 'Buyer') {
-                navigate(`/${token_key}/${id}`);
+                navigate(`/${token_key}/${id}/${userType}`);
             } else if (userType === "Seller") {
-                navigate(`/seller?login=${token_key}&id=${id}`);
+                navigate(`/seller/${token_key}/${id}/${userType}`);
             }
+            
 
         }
 

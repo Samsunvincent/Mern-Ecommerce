@@ -1,4 +1,4 @@
-export default function Buyer(){
+export default function Admin(){
     return(
         <>
             hello world

@@ -1,10 +1,70 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import getCategory from "../functionalities/getCategory";
+import filterCategory from "../functionalities/filterCategory";
 
-export default function NavTwo() {
+// Custom hook for fetching categories
+const useCategories = () => {
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategory();
+        if (Array.isArray(data)) {
+          setCategories(data);
+        } else {
+          throw new Error("Invalid data format received.");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  return { categories, isLoading, error };
+};
+
+export default function NavTwo({ setFilteredProducts }) {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [filterError, setFilterError] = useState(null);
+  const { categories, isLoading, error } = useCategories();
 
-  const toggleOffcanvas = () => {
-    setShowOffcanvas(!showOffcanvas);
+  // Toggle offcanvas state
+  const toggleOffcanvas = useMemo(
+    () => () => setShowOffcanvas((prev) => !prev),
+    []
+  );
+
+  // Handle category selection
+  const handleCategoryChange = async (e) => {
+    const value = e.target.value;
+    setSelectedCategory(value); // Update the selected category
+
+    if (value) {
+      try {
+        const data = await filterCategory(value);
+        if (data.success !== false) {
+          setFilteredProducts(data); // Update parent component with filtered products
+          setFilterError(null);
+        } else {
+          setFilterError(data.message || "Failed to fetch filtered products.");
+          setFilteredProducts([]); // Clear filtered products on failure
+        }
+      } catch (err) {
+        setFilterError("An error occurred while filtering products.");
+        setFilteredProducts([]); // Clear filtered products on error
+      }
+    } else {
+      setFilteredProducts([]); // Clear filtered products if no category is selected
+      setFilterError(null);
+    }
   };
 
   return (
@@ -13,19 +73,12 @@ export default function NavTwo() {
         {/* Menu Button and Search Box */}
         <div className="d-flex align-items-center gap-3">
           {/* Menu Button */}
-          <button
-            className="btn btn-primary"
-            onClick={toggleOffcanvas}
-          >
-            Menu
+          <button className="btn btn-primary" onClick={toggleOffcanvas}>
+            <i className="fa fa-bars" aria-hidden="true"></i>
           </button>
 
           {/* Search Box */}
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search..."
-          />
+          <input type="text" className="form-control" placeholder="Search..." />
         </div>
 
         {/* Navigation Links */}
@@ -50,28 +103,30 @@ export default function NavTwo() {
         <div className="offcanvas-header">
           <h5>Categories</h5>
           {/* Close Button */}
-          <button
-            className="btn-close"
-            onClick={toggleOffcanvas}
-          >
+          <button className="btn-close" onClick={toggleOffcanvas}>
             &times;
           </button>
         </div>
         <div className="offcanvas-body">
-          <ul className="list-unstyled">
-            <li>Electronics</li>
-            <li>Fashion</li>
-            <li>Home & Kitchen</li>
-            <li>Sports</li>
-            <li>Books</li>
-          </ul>
-          {/* Another Close Button at the Bottom */}
-          <button
-            className="btn btn-secondary w-100 mt-3"
-            onClick={toggleOffcanvas}
-          >
-            Close
-          </button>
+          {isLoading && <p>Loading categories...</p>}
+          {error && <p className="text-danger">Error: {error}</p>}
+          {!isLoading && !error && (
+            <select
+              className="form-select"
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.category}>
+                  {cat.category}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Display Filter Error */}
+          {filterError && <p className="text-danger">Error: {filterError}</p>}
         </div>
       </div>
 
@@ -118,18 +173,11 @@ export default function NavTwo() {
           padding: 1rem;
         }
 
-        .offcanvas-body ul {
-          padding: 0;
-        }
-
-        .offcanvas-body li {
-          margin-bottom: 1rem;
-        }
-
-        ul {
-          margin: 0;
-          padding: 0;
-          list-style-type: none;
+        .form-select {
+          width: 100%;
+          padding: 0.5rem;
+          margin-top: 1rem;
+          border-radius: 4px;
         }
 
         .btn-close {
