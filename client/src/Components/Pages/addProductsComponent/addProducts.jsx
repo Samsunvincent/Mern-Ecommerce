@@ -16,6 +16,8 @@ const initialState = {
   stock: '',
   brand: '',
   description: '',
+  discount : '',
+  offer : '',
   images: [], // Store images as files
 };
 
@@ -41,7 +43,7 @@ function formReducer(state, action) {
 
 export default function AddProducts() {
   const [state, dispatch] = useReducer(formReducer, initialState);
-  const { categories, isLoading, error, name, price, stock, brand, description, selectedCategory, images } = state;
+  const { categories, isLoading, error, name, price, stock, brand, description, selectedCategory,discount,offer, images } = state;
   const params = useParams();
 
   // Fetch categories from the server
@@ -79,6 +81,10 @@ export default function AddProducts() {
       formData.append("brand", brand);
       formData.append("description", description);
       formData.append("category", selectedCategory);
+      formData.append("discount", discount);
+      formData.append("offer", offer);
+
+
 
       // Append images using 'images[]' for multiple files
       images.forEach((image) => {
@@ -185,6 +191,36 @@ export default function AddProducts() {
                 onChange={(e) => dispatch({ type: "UPDATE_FIELD", field: "brand", value: e.target.value })}
               />
             </div>
+            {/* discount */}
+            {/* Discount and Offer */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700" htmlFor="discount">
+                Discount
+              </label>
+              <div className="flex items-center gap-4 mt-1">
+                <input
+                  className="block w-1/2 p-2 border border-gray-300 rounded-md"
+                  id="discount"
+                  type="text"
+                  placeholder="e.g., 10%"
+                  value={state.discount}
+                  onChange={(e) => dispatch({ type: "UPDATE_FIELD", field: "discount", value: e.target.value })}
+                />
+                <label className="block text-sm font-medium text-gray-700" htmlFor="offer">
+                  Offer
+                </label>
+                <input
+                  className="block w-1/2 p-2 border border-gray-300 rounded-md"
+                  id="offer"
+                  type="text"
+                  placeholder="e.g., Buy 1 Get 1 Free"
+                  value={state.offer}
+                  onChange={(e) => dispatch({ type: "UPDATE_FIELD", field: "offer", value: e.target.value })}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Specify the discount (e.g., "10%") and any additional offer (e.g., "Buy 1 Get 1 Free").</p>
+            </div>
+
 
             {/* Description */}
             <div className="col-span-2">

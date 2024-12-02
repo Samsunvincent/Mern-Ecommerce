@@ -10,8 +10,10 @@ import './Components/Pages/loginComponent/Login.css';
 import Admin from './Components/Pages/adminComponent/Admin';
 import Seller from './Components/Pages/sellerComponent/SellerComponent';
 import AddProducts from './Components/Pages/addProductsComponent/addProducts';
-import sellerDashboard from './Components/Pages/sellerComponent/sellerDashboard';
+import SellerDashboard from './Components/Pages/sellerComponent/sellerDashboard';
 import './Components/Pages/sellerComponent/sellerDashboard.css';
+import SingleProductView from './Components/Pages/SingleProductView/SingleProductView';
+import AddToCartPage from './Components/Pages/AddToCart/AddToCartPage';
 
 
 
@@ -30,6 +32,10 @@ function App() {
             <Route path='/Admin/:login/:id/:usertype' element={<Admin />} />
             <Route path='/seller/:login/:id/:usertype' element={<Seller />} />
             <Route path='/addProducts/:login/:id/:usertype' element={<AddProducts/>}/>
+            <Route path='/sellerDashboard/:login/:id/:usertype' element={<SellerDashboard/>}/>
+            <Route path='/singleView/:login/:id/:usertype/:p_id' element={<SingleProductView/>}/>
+            <Route path='/addtocart/:login/:id/:usertype/:p_id/:price/:quantity' element={<AddToCartPage/>}/>
+           
 
             {/* Base route */}
             <Route path='/' element={<IndexComponent />} />

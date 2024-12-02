@@ -27,6 +27,12 @@ export default function Nav() {
             console.log("Token key is not available.");
         }
     }, [navigate, usertype, id]); // Add necessary dependencies
+
+    const handleprofile = useCallback(() => {
+        if(login && usertype==="Seller"){
+            navigate(`/sellerDashboard/${login}/${id}/${usertype}`)
+        }
+    })
     
     return (
         <>
@@ -75,7 +81,7 @@ export default function Nav() {
                                 <i className="fa fa-user" aria-hidden="true" id="profile"></i>
                             </button>
                             <ul className="dropdown-menu">
-                                <li onClick={() => console.log("Settings clicked")}>
+                                <li onClick={handleprofile}>
                                     <a className="dropdown-item" href="#">
                                         Manage profile
                                     </a>

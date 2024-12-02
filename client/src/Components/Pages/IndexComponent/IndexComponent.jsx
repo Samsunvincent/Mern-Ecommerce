@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Nav from "../../Nav/navOne";
 import NavTwo from "../../Nav/navTwo";
 import getAllProducts from "../../functionalities/getAllProducts";
@@ -21,6 +21,8 @@ export default function IndexComponent() {
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]); // State for filtered products
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate()
+  const params = useParams()
 
   // Fetch all products on component mount
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function IndexComponent() {
         />
         <div className="card-body">
           <h5 className="card-title hover:text-sky-600">
-            {product.name.length > 100 ? product.name.slice(0, 100) + "..." : product.name}
+            {product.name.length > 40 ? product.name.slice(0, 40) + "..." : product.name}
           </h5>
           <p className="card-text" style={{ color: "red" }}>${product.price}</p>
         </div>
@@ -69,6 +71,18 @@ export default function IndexComponent() {
   const getNewArrivals = (products, n) => {
     return products.slice(-n).reverse(); // Take the last N products and reverse them
   };
+  const handleSingleView = useCallback((p_id) => {
+
+    let token_key = params.login;
+    let id = params.id;
+    let usertype = params.usertype;
+    console.log("p_if",p_id)
+
+
+
+    navigate(`/singleView/${token_key}/${id}/${usertype}/${p_id}`)
+
+  })
 
   return (
     <>
@@ -103,19 +117,33 @@ export default function IndexComponent() {
             <div className="text-center p-5 fs-2 fw-bolder" id="featured">
               FEATURED
             </div>
-            <div id="productsContainer" className="product-card container">
+            <div
+              id="productsContainer"
+              className="product-card container"
+            >
               {isLoading ? (
                 <div>Loading...</div>
               ) : filteredProducts.length > 0 ? ( // Display filtered products if available
                 filteredProducts.map((product) => (
-                  <ProductCard key={product._id} product={product} />
+                  <div
+                    key={product._id}
+                    onClick={() => handleSingleView(product._id)} // Pass the ID as a parameter
+                  >
+                    <ProductCard product={product} />
+                  </div>
                 ))
               ) : (
                 allProducts.map((product) => (
-                  <ProductCard key={product._id} product={product} />
+                  <div
+                    key={product._id}
+                    onClick={() => handleSingleView(product._id)} // Pass the ID as a parameter
+                  >
+                    <ProductCard product={product} />
+                  </div>
                 ))
               )}
             </div>
+
 
             {/* Budget Products Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="budget">

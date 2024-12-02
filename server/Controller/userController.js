@@ -474,6 +474,7 @@ exports.filterCategory = async function(req, res) {
 exports.addToCart = async function (req, res) {
     try {
         const { userId, productId, quantity, price } = req.body;
+        console.log("body",req.body);
 
         // Validate input data
         if (!userId || !productId || !quantity || quantity <= 0 || !price) {

@@ -61,6 +61,8 @@ exports.addProducts = async function (req, res) {
             category: body.category,
             brand: body.brand,
             stock: body.stock,
+            offer : body.offer,
+            discount : body.discount,
             images, // Use processed images
         });
 
@@ -88,42 +90,7 @@ exports.addProducts = async function (req, res) {
     }
 };
 
-// exports.getProducts = async function (req, res) {
-//     try {
-//         let productData = await products.find();
-//         console.log("productData", productData);
 
-//         if (!productData) {
-//             let response = error_function({
-//                 success: false,
-//                 statusCode: 400,
-
-//             });
-//             return res.status(response.statusCode).send(response);
-
-//         } else {
-//             let response = success_function({
-//                 success: true,
-//                 statusCode: 200,
-//                 message: "fetching successfull",
-//                 data: productData,
-//             });
-//             return res.status(response.statusCode).send(response);
-
-//         }
-
-//     } catch (error) {
-//         console.log("error", error);
-
-//         let response = error_function({
-//             success: false,
-//             statusCode: 400,
-//             message: "something went wrong",
-//         });
-//         return res.status(response.statusCode).send(response);
-
-//     }
-// }
 
 
 exports.getProducts = async function (req, res) {
@@ -171,46 +138,46 @@ exports.getProducts = async function (req, res) {
 };
 
 
-exports.getAddedProducts = async function (req, res) {
-    let sellerID = req.params.id;  // The seller's ID is passed as a route parameter
-    console.log("sellerID", sellerID);  // Log sellerID to verify it
+// exports.getAddedProducts = async function (req, res) {
+//     let sellerID = req.params.id;  // The seller's ID is passed as a route parameter
+//     console.log("sellerID", sellerID);  // Log sellerID to verify it
 
-    try {
-        // Query the products collection for all products associated with the sellerID
-        let addedProducts = await products.find({ sellerID: sellerID });
+//     try {
+//         // Query the products collection for all products associated with the sellerID
+//         let addedProducts = await products.find({ sellerID: sellerID });
 
-        console.log("addedProducts", addedProducts);  // Log the found products
+//         console.log("addedProducts", addedProducts);  // Log the found products
 
-        // If products are found, return them as a successful response
-        if (addedProducts.length > 0) {
-            const response = success_function({
-                success: true,
-                statusCode: 200,
-                message: "Products retrieved successfully",
-                data: addedProducts,
-            });
-            return res.status(response.statusCode).send(response);
-        } else {
-            // If no products are found for this seller, return a 404 response
-            const response = error_function({
-                success: false,
-                statusCode: 404,
-                message: "No products found for this seller.",
-            });
-            return res.status(response.statusCode).send(response);
-        }
-    } catch (error) {
-        console.error("Error retrieving products:", error);
+//         // If products are found, return them as a successful response
+//         if (addedProducts.length > 0) {
+//             const response = success_function({
+//                 success: true,
+//                 statusCode: 200,
+//                 message: "Products retrieved successfully",
+//                 data: addedProducts,
+//             });
+//             return res.status(response.statusCode).send(response);
+//         } else {
+//             // If no products are found for this seller, return a 404 response
+//             const response = error_function({
+//                 success: false,
+//                 statusCode: 404,
+//                 message: "No products found for this seller.",
+//             });
+//             return res.status(response.statusCode).send(response);
+//         }
+//     } catch (error) {
+//         console.error("Error retrieving products:", error);
 
-        // Handle any errors that occur during the process
-        const response = error_function({
-            success: false,
-            statusCode: 500,
-            message: "Failed to retrieve products, please try again.",
-        });
-        return res.status(response.statusCode).send(response);
-    }
-};
+//         // Handle any errors that occur during the process
+//         const response = error_function({
+//             success: false,
+//             statusCode: 500,
+//             message: "Failed to retrieve products, please try again.",
+//         });
+//         return res.status(response.statusCode).send(response);
+//     }
+// };
 
 exports.getSingleViewProduct = async function (req, res) {
 

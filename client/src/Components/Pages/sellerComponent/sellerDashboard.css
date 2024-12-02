@@ -81,9 +81,9 @@
     font-weight: 500;
     font-size: 18px;
 }.account-action-btn {
-    display: block; /* Makes buttons stack vertically */
+    display: block; 
 
-    margin-bottom: 10px; /* Adds space between the buttons */
+    margin-bottom: 10px; 
     
 }
 .deleacc-color{
@@ -113,14 +113,14 @@
     font-size: 14px;
     color: var(--color-grey-grade4);
     transition: transform 0.2s ease, font-size 0.2s ease, top 0.2s ease;
-    pointer-events: none;  /* Makes sure the label does not interfere with input clicks */
+    pointer-events: none; 
 }
 
 input:focus + .lBFHyk,
 input:not(:placeholder-shown) + .lBFHyk {
-    transform: translateY(-22px);  /* Moves label up */
-    font-size: 12px;  /* Reduces font size */
-    top: 0px;  /* Adjusts the top position */
+    transform: translateY(-22px);  
+    font-size: 12px;  
+    top: 0px;  
 }
 
 input {
@@ -131,7 +131,7 @@ input {
 
 input:focus {
     outline: none;
-    border-color: #007bff;  /* Optional: Add border color change when focus */
+    border-color: #007bff;  
 }
 
 .no-address-container{
