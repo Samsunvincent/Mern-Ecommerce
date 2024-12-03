@@ -12,11 +12,11 @@ const cartSchema = new mongoose.Schema({
             ref: 'Product',  // Assuming you have a Product model to reference the products
             required: true
         },
-        // quantity: {
-        //     type: Number,
-        //     // required: true,
-        //     min: 1  // Minimum quantity should be 1
-        // },
+        quantity: {
+            type: Number,
+            // required: true,
+            min: 1  // Minimum quantity should be 1
+        },
         price: {
             type: Number,
             required: true

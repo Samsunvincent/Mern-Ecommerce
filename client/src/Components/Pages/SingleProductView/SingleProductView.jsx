@@ -3,6 +3,7 @@ import SingleView from "../../functionalities/SingleView";
 import { useNavigate, useParams } from "react-router-dom";
 import Nav from "../../Nav/navOne";
 import NavTwo from "../../Nav/navTwo";
+import AddToCart from "../../functionalities/addToCart";
 
 export default function SingleProductView() {
     const [singleData, setSingleData] = useState(null); // Store fetched product data
@@ -34,23 +35,37 @@ export default function SingleProductView() {
         setEnlargedImage(imageUrl); // Update the enlarged image
     };
 
-    const handleAddToCart = useCallback((p_id, event, price) => {
-        event.preventDefault();
+    const handleAddToCart = useCallback(async (p_id, price) => {
+        try {
+            const { id,login,usertype } = params;
     
-        // Destructure the parameters from the URL
-        const { login, id, usertype } = params; 
-
-       
+            const data = {
+                userId: id,
+                productId: p_id,
+                price,
+            };
     
-        // Ensure login and id are available
-        if (!login || !id) {
-            alert("Please login to continue");
-        } else {
-            const quantity = 1;
-            // Update the URL with necessary parameters
-            navigate(`/addtocart/${login}/${id}/${usertype}/${p_id}/${price}/${quantity}`);
+            const response = await AddToCart(data);
+    
+            console.log("API Response:", response); // Log the entire response
+    
+            // Check if the response has the success field
+            if (response && response.success) {
+                console.log("Item successfully added to cart:", response);
+                alert(`Item added to cart. Total Price: ${response.totalPrice}`);
+                navigate(`/getcartdata/${login}/${id}/${usertype}`)
+            } else {
+                console.error("Error adding item to cart:", response?.message || "Unknown error");
+                alert(`Error: ${response?.message || "Unknown error"}`);
+            }
+        } catch (error) {
+            console.error("Exception in handleAddToCart:", error);
+            alert("An unexpected error occurred while adding the item to the cart.");
         }
     }, [params, navigate]);
+    
+    
+    
 
     return (
         <>
@@ -139,7 +154,7 @@ export default function SingleProductView() {
                                                 onClick={(event) =>
                                                     handleAddToCart(
                                                         singleData.product._id,
-                                                        event,
+                                                        
                                                         singleData.product.price
                                                     )
                                                 }

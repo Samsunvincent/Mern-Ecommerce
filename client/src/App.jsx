@@ -13,7 +13,7 @@ import AddProducts from './Components/Pages/addProductsComponent/addProducts';
 import SellerDashboard from './Components/Pages/sellerComponent/sellerDashboard';
 import './Components/Pages/sellerComponent/sellerDashboard.css';
 import SingleProductView from './Components/Pages/SingleProductView/SingleProductView';
-import AddToCartPage from './Components/Pages/AddToCart/AddToCartPage';
+import CartData from './Components/Pages/cartdata/CartData';
 
 
 
@@ -34,7 +34,7 @@ function App() {
             <Route path='/addProducts/:login/:id/:usertype' element={<AddProducts/>}/>
             <Route path='/sellerDashboard/:login/:id/:usertype' element={<SellerDashboard/>}/>
             <Route path='/singleView/:login/:id/:usertype/:p_id' element={<SingleProductView/>}/>
-            <Route path='/addtocart/:login/:id/:usertype/:p_id/:price/:quantity' element={<AddToCartPage/>}/>
+            <Route path='/getcartdata/:login/:id/:usertype/' element={<CartData/>}/>
            
 
             {/* Base route */}

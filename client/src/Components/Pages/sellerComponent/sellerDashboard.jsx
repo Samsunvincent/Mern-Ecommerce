@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import GetUser from "../../functionalities/getUser";
 import { useParams } from "react-router-dom";
 import UpdateUser from "../../functionalities/updateUser";
@@ -7,6 +7,11 @@ export default function SellerDashboard() {
     const [userName, setUserName] = useState("");
     const params = useParams();
     const [userData, setUserData] = useState("");
+    const [showProfile, setShowProfile] = useState(true);
+    const [showManageAddress, setShowManageAddress] = useState(false);
+    const [showAddressForm,setShowAddressForm] = useState(false);
+    const [reloadProfile, setReloadProfile] = useState(false); // Triggers reload of profile section
+
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -48,7 +53,7 @@ export default function SellerDashboard() {
         if (userData) {
             loadFetchedData();
         }
-    }, [userData]); // Runs only when userData changes
+    }, [userData,reloadProfile]); // Runs only when userData changes
 
     useEffect(() => {
         // Initialize the edit, save, cancel functionality after userData is set
@@ -56,6 +61,11 @@ export default function SellerDashboard() {
             initializeEditSaveCancelLogic();
         }
     }, [userData]); // Triggered when userData changes
+
+    useEffect(() => {
+    setShowProfile(true); // Show Personal Information by default
+}, []);
+
 
     function initializeEditSaveCancelLogic() {
         // Function to set up logic for each input section
@@ -67,7 +77,9 @@ export default function SellerDashboard() {
 
             let originalValue = input.value; // Store original value for cancel functionality
             let id = params.id;
-            console.log("id",id)
+
+
+
 
             // Toggle between edit and read-only mode
             function toggleEditMode(editMode) {
@@ -95,10 +107,10 @@ export default function SellerDashboard() {
                     // Prepare the data for updating the user
                     const updateData = {};
                     updateData[fieldId] = updatedValue;
-                    console.log("updated data",updateData)
+                    console.log("updated data", updateData)
 
-                   await UpdateUser(id,updateData)
-                   
+                    await UpdateUser(id, updateData)
+
                 } catch (error) {
                     console.error(`An error occurred while saving ${fieldId}:`, error);
                 }
@@ -119,8 +131,28 @@ export default function SellerDashboard() {
         setupField('email');
         setupField('phone');
 
-        
+
+
+
     }
+
+    const showProfileSection = () => {
+        setShowProfile(true);
+        setShowManageAddress(false);
+    
+        // Toggle `reloadProfile` to force reloading content
+        setReloadProfile((prev) => !prev);
+    };
+    
+
+    const showManageAddressSection = () => {
+        setShowProfile(false);
+        setShowManageAddress(true);
+    };
+
+    const addAddress = useCallback(()=>{
+        console.log("hello world")
+    })
     return (
         <>
             <div className="bg-light">
@@ -191,7 +223,7 @@ export default function SellerDashboard() {
                                         <div className="px-5 pt-3 button-hov" id="profile-link">
                                             <button
                                                 className="remove-button-style mb-3"
-                                                onclick="showProfile()"
+                                                onClick={showProfileSection}
                                             >
                                                 Profile Information
                                             </button>
@@ -199,7 +231,7 @@ export default function SellerDashboard() {
                                         <div className="px-5 pt-3 button-hov" id="manage-address-link">
                                             <button
                                                 className="remove-button-style mb-3"
-                                                onclick="manageAddress()"
+                                                onClick={showManageAddressSection}
                                             >
                                                 Manage Addresses
                                             </button>
@@ -318,266 +350,268 @@ export default function SellerDashboard() {
                         style={{ width: "75%", marginLeft: 16 }}
                         id="main-content"
                     >
-                        <div>
-                            {/* Personal Information */}
-                            <div className="fs-5 personalInformation pt-4">
-                                Personal Information
-                                <span className="fs-6 te edit-button-color">
-                                    <button id="edit-name-button" className="remove-button-style px-5">
-                                        Edit
-                                    </button>
-                                    <button
-                                        id="save-name-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        id="cancel-name-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </span>
-                                <div className="pt-4">
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        id="name"
-                                        className="p-2"
-                                        readOnly=""
-                                    />
-                                </div>
-                            </div>
-                            {/* Email Address */}
-                            <div className="pt-4 fs-5 personalInformation">
-                                Email Address
-                                <span className="fs-6 te edit-button-color">
-                                    <button id="edit-email-button" className="remove-button-style px-5">
-                                        Edit
-                                    </button>
-                                    <button
-                                        id="save-email-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        id="cancel-email-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </span>
-                                <div className="pt-4">
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        id="email"
-                                        className="p-2"
-                                        readOnly=""
-                                    />
-                                </div>
-                            </div>
-                            {/* Mobile Number */}
-                            <div className="pt-4 fs-5 personalInformation">
-                                Mobile Number
-                                <span className="fs-6 te edit-button-color">
-                                    <button id="edit-phone-button" className="remove-button-style px-5">
-                                        Edit
-                                    </button>
-                                    <button
-                                        id="save-phone-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        id="cancel-phone-button"
-                                        className="remove-button-style px-5"
-                                        style={{ display: "none" }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </span>
-                                <div className="pt-4">
-                                    <input
-                                        type="number"
-                                        name="phone"
-                                        id="phone"
-                                        className="p-2"
-                                        readOnly=""
-                                    />
-                                </div>
-                            </div>
-                            {/* FAQs Section */}
-                            <div className="pt-5 faqs">
-                                <div>FAQ's</div>
-                                <div className="pt-3 fs-6">
-                                    What happens when I update my email address (or mobile number)?
-                                    <div className="fw-light pt-2">
-                                        Your login email id (or mobile number) changes, likewise. You'll
-                                        receive all your account-related communication on your updated
-                                        email address (or mobile number).
-                                    </div>
-                                </div>
-                                <div className="pt-3 fs-6">
-                                    Does my Seller account get affected when I update my email address?
-                                    <div className="fw-light pt-2">
-                                        We have a 'single sign-on' policy. Any changes will reflect in
-                                        your Seller account also.
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="pt-5">
-                                        <button className="account-action-btn remove-button-style fs-6 deaacc-color">
-                                            Deactivate Account
-                                        </button>
-                                        <button className="account-action-btn remove-button-style fs-6 deleacc-color">
-                                            Delete Account
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="manageAdresses" style={{ display: "none" }}>
-                        <div
-                            className=" pt-3 bg-white p-5 px-5"
-                            style={{ width: "50vw", marginLeft: 16 }}
-                        >
-                            <div className="manage-adress-text pt-3" id="empty-manage">
-                                Manage Addresses
-                            </div>
-                            <div className="pt-5">
-                                <div className="p-3 border" id="newaddress">
-                                    <span
-                                        onclick="showForm()"
-                                        style={{ cursor: "pointer", color: "rgb(40,116,240)" }}
-                                    >
-                                        <img
-                                            src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGZpbGw9IiMyMTc1RkYiIGQ9Ik0xMS4yNSA2Ljc1aC00LjV2NC41aC0xLjV2LTQuNUguNzV2LTEuNWg0LjVWLjc1aDEuNXY0LjVoNC41Ii8+PHBhdGggZD0iTS0zLTNoMTh2MThILTMiLz48L2c+PC9zdmc+"
-                                            alt=""
-                                            className="px-3"
-                                        />
-                                        ADD A NEW ADDRESS
-                                    </span>
-                                </div>
-                            </div>
-                            {/* address form */}
-                            <div
-                                id="address-form"
-                                style={{ display: "none", backgroundColor: "rgb(245,250,255)" }}
-                                className="p-3"
-                            >
-                                <form onsubmit="addAddress(event)">
-                                    <div>
-                                        <div style={{ color: "rgb(40,116,240)" }}>ADD A NEW ADDRESS</div>
-                                        <div className="d-flex pt-5 gap-5">
-                                            <div className="input-container w-100">
-                                                <input
-                                                    type="text"
-                                                    className="p-2 w-100"
-                                                    name="name"
-                                                    id="name1"
-                                                />
-                                                <label htmlFor="name" className="lBFHyk">
-                                                    Name
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex pt-5 gap-5">
-                                            <div className="input-container">
-                                                <input type="text" className="p-2" name="state" id="state" />
-                                                <label htmlFor="city" className="lBFHyk">
-                                                    State
-                                                </label>
-                                            </div>
-                                            <div className="input-container">
-                                                <input type="text" className="p-2" name="city" id="city" />
-                                                <label htmlFor="city" className="lBFHyk">
-                                                    city
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex pt-5 gap-5">
-                                            <div className="input-container">
-                                                <input
-                                                    type="text"
-                                                    className="p-2"
-                                                    name="street"
-                                                    id="street"
-                                                />
-                                                <label htmlFor="name" className="lBFHyk">
-                                                    Street
-                                                </label>
-                                            </div>
-                                            <div className="input-container">
-                                                <input
-                                                    type="text"
-                                                    className="p-2"
-                                                    name="pincode"
-                                                    id="pincode"
-                                                />
-                                                <label htmlFor="name" className="lBFHyk">
-                                                    Pincode
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex pt-5 gap-5">
-                                            <div className="input-container w-100">
-                                                <input
-                                                    type="text"
-                                                    className="p-2 w-100"
-                                                    name="country"
-                                                    id="country"
-                                                />
-                                                <label htmlFor="city" className="lBFHyk">
-                                                    Country
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="d-flex pt-4">
-                                            <div>
-                                                <button
-                                                    type="submit"
-                                                    className="remove-button-style px-5 p-3"
-                                                    style={{
-                                                        backgroundColor: "rgb(40,116,240)",
-                                                        color: "white"
-                                                    }}
-                                                >
-                                                    SAVE
-                                                </button>
-                                            </div>
-                                            <div>
-                                                <button
-                                                    type="submit"
-                                                    className="remove-button-style p-3 px-5"
-                                                    onclick="closeForm()"
-                                                    style={{
-                                                        color: "rgb(40,116,240)",
-                                                        fontSize: 14,
-                                                        fontWeight: 500
-                                                    }}
-                                                >
-                                                    CANCEL
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
+                        {showProfile && (
                             <div>
-                                <div id="address-data" className="pt-3"></div>
+                                {/* Personal Information */}
+                                <div className="fs-5 personalInformation pt-4">
+                                    Personal Information
+                                    <span className="fs-6 te edit-button-color">
+                                        <button id="edit-name-button" className="remove-button-style px-5">
+                                            Edit
+                                        </button>
+                                        <button
+                                            id="save-name-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            id="cancel-name-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </span>
+                                    <div className="pt-4">
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            id="name"
+                                            className="p-2"
+                                            readOnly=""
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Email Address */}
+                                <div className="pt-4 fs-5 personalInformation">
+                                    Email Address
+                                    <span className="fs-6 te edit-button-color">
+                                        <button id="edit-email-button" className="remove-button-style px-5">
+                                            Edit
+                                        </button>
+                                        <button
+                                            id="save-email-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            id="cancel-email-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </span>
+                                    <div className="pt-4">
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            id="email"
+                                            className="p-2"
+                                            readOnly=""
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Mobile Number */}
+                                <div className="pt-4 fs-5 personalInformation">
+                                    Mobile Number
+                                    <span className="fs-6 te edit-button-color">
+                                        <button id="edit-phone-button" className="remove-button-style px-5">
+                                            Edit
+                                        </button>
+                                        <button
+                                            id="save-phone-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            id="cancel-phone-button"
+                                            className="remove-button-style px-5"
+                                            style={{ display: "none" }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </span>
+                                    <div className="pt-4">
+                                        <input
+                                            type="number"
+                                            name="phone"
+                                            id="phone"
+                                            className="p-2"
+                                            readOnly=""
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* FAQs Section */}
+                                <div className="pt-5 faqs">
+                                    <div>FAQ's</div>
+                                    <div className="pt-3 fs-6">
+                                        What happens when I update my email address (or mobile number)?
+                                        <div className="fw-light pt-2">
+                                            Your login email id (or mobile number) changes, likewise. You'll
+                                            receive all your account-related communication on your updated
+                                            email address (or mobile number).
+                                        </div>
+                                    </div>
+                                    <div className="pt-3 fs-6">
+                                        Does my Seller account get affected when I update my email address?
+                                        <div className="fw-light pt-2">
+                                            We have a 'single sign-on' policy. Any changes will reflect in
+                                            your Seller account also.
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="pt-5">
+                                            <button className="account-action-btn remove-button-style fs-6 deaacc-color">
+                                                Deactivate Account
+                                            </button>
+                                            <button className="account-action-btn remove-button-style fs-6 deleacc-color">
+                                                Delete Account
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    {showManageAddress && (
+                        <div id="manageAdresses">
+                            <div
+                                className="pt-3 bg-white p-5 px-5"
+                                style={{ width: "50vw", marginLeft: 16 }}
+                            >
+                                <div className="manage-adress-text pt-3" id="empty-manage">
+                                    Manage Addresses
+                                </div>
+                                <div className="pt-5">
+                                    <div className="p-3 border" id="newaddress">
+                                        <span
+                                            onClick={() => setShowAddressForm(true)} // Trigger showing the address form
+                                            style={{ cursor: "pointer", color: "rgb(40,116,240)" }}
+                                        >
+                                            <img
+                                                src="data:image/svg+xml;base64,..."
+                                                alt=""
+                                                className="px-3"
+                                            />
+                                            ADD A NEW ADDRESS
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Address form */}
+                                {showAddressForm && (
+                                    <div
+                                        id="address-form"
+                                        style={{ backgroundColor: "rgb(245,250,255)" }}
+                                        className="p-3"
+                                    >
+                                        <form onSubmit={addAddress}> {/* Handle form submission */}
+                                            <div>
+                                                <div style={{ color: "rgb(40,116,240)" }}>ADD A NEW ADDRESS</div>
+                                                <div className="d-flex pt-5 gap-5">
+                                                    <div className="input-container w-100">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2 w-100"
+                                                            name="name"
+                                                            id="name1"
+                                                        />
+                                                        <label htmlFor="name" className="lBFHyk">
+                                                            Name
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex pt-5 gap-5">
+                                                    <div className="input-container">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2"
+                                                            name="state"
+                                                            id="state"
+                                                        />
+                                                        <label htmlFor="city" className="lBFHyk">
+                                                            State
+                                                        </label>
+                                                    </div>
+                                                    <div className="input-container">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2"
+                                                            name="city"
+                                                            id="city"
+                                                        />
+                                                        <label htmlFor="city" className="lBFHyk">
+                                                            City
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex pt-5 gap-5">
+                                                    <div className="input-container">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2"
+                                                            name="street"
+                                                            id="street"
+                                                        />
+                                                        <label htmlFor="name" className="lBFHyk">
+                                                            Street
+                                                        </label>
+                                                    </div>
+                                                    <div className="input-container">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2"
+                                                            name="pincode"
+                                                            id="pincode"
+                                                        />
+                                                        <label htmlFor="name" className="lBFHyk">
+                                                            Pincode
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex pt-5 gap-5">
+                                                    <div className="input-container w-100">
+                                                        <input
+                                                            type="text"
+                                                            className="p-2 w-100"
+                                                            name="country"
+                                                            id="country"
+                                                        />
+                                                        <label htmlFor="name" className="lBFHyk">
+                                                            Country
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div className="pt-3">
+                                                    <button
+                                                        type="submit"
+                                                        className="remove-button-style bg-white border border-0"
+                                                        style={{
+                                                            border: "2px solid rgb(245,245,245)",
+                                                            color: "rgb(69,69,69)",
+                                                        }}
+                                                    >
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
+
                 </div>
             </div>
         </>

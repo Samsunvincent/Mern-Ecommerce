@@ -470,18 +470,17 @@ exports.filterCategory = async function(req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
-
 exports.addToCart = async function (req, res) {
     try {
-        const { userId, productId, quantity, price } = req.body;
-        console.log("body",req.body);
+        const { userId, productId, price } = req.body; // Removed `quantity` from req.body
+        console.log("Request Body:", req.body);
 
         // Validate input data
-        if (!userId || !productId || !quantity || quantity <= 0 || !price) {
+        if (!userId || !productId || !price) {
             let response = error_function({
                 success: false,
                 statusCode: 400,
-                message: "Invalid input data. Ensure userId, productId, quantity (>0), and price are provided."
+                message: "Invalid input data. Ensure userId, productId, and price are provided."
             });
             return res.status(response.statusCode).send(response);
         }
@@ -511,12 +510,9 @@ exports.addToCart = async function (req, res) {
         // Retrieve the cart or create a new one if it doesn't exist
         let cart = await addtocartmodel.findOne({ userId });
 
-        // Ensure no stale data is present after deletion
         if (!cart) {
-            console.log("No existing cart found, creating a new cart.");
+            console.log("No existing cart found, creating a new one.");
             cart = new addtocartmodel({ userId, items: [] });
-        } else {
-            console.log("Existing cart found:", cart);
         }
 
         // Check if the product is already in the cart
@@ -525,35 +521,34 @@ exports.addToCart = async function (req, res) {
         );
 
         if (existingItem) {
-            // Update quantity for the existing product
-            existingItem.quantity += quantity;
-            console.log(`Updated quantity for product ${productId}:`, existingItem.quantity);
+            // If the item already exists, ensure its quantity remains 1
+            console.log(`Product ${productId} already exists in the cart. Quantity set to 1.`);
+            existingItem.quantity = 1; // Force quantity to remain 1
         } else {
-            // Add new product to the cart
-            cart.items.push({ productId, quantity, price });
-            console.log(`Added new product ${productId} to the cart.`);
+            // Add new product to the cart with quantity set to 1
+            cart.items.push({ productId, quantity: 1, price });
+            console.log(`Added new product ${productId} to the cart with quantity 1.`);
         }
+
+        // Calculate total price of the cart
+        const totalPrice = cart.items.reduce((total, item) => {
+            return total + item.price * item.quantity;
+        }, 0);
+
+        // Update totalPrice field in the cart
+        cart.totalPrice = totalPrice;
 
         // Save the updated cart
         await cart.save();
 
-        // Populate product details for all cart items
-        const cartWithProductDetails = await Promise.all(
-            cart.items.map(async (item) => {
-                const productDetail = await product.findById(item.productId).populate("sellerID");
-                return {
-                    ...item.toObject(), // Spread cart item properties
-                    product: productDetail // Add product details
-                };
-            })
-        );
+        console.log(`Total price of cart updated: ${totalPrice}`);
 
-        // Send the response with updated cart and full product details
+        // Send a success response with the total price
         let response = success_function({
             success: true,
             statusCode: 200,
-            message: "Added to cart successfully.",
-            data: { cart, cartItemsWithProducts: cartWithProductDetails }
+            message: "Item added to cart successfully.",
+            totalPrice: cart.totalPrice // Include total price in the response
         });
         return res.status(response.statusCode).send(response);
     } catch (error) {
@@ -567,6 +562,7 @@ exports.addToCart = async function (req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
+
 
 
 exports.getCartData = async function (req, res) {

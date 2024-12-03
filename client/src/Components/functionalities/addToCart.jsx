@@ -1,21 +1,20 @@
-import axios from "axios"
+import axios from "axios";
 
-const AddToCart = async function (body) {
-
+const AddToCart = async (body) => {
     try {
-        let response = await axios.post(`http://localhost:3000/addtocart`,body,{
-            headers : {
-                'Content-Type' : 'application/json',
+        const response = await axios.post(`http://localhost:3000/addtocart`, body, {
+            headers: {
+                'Content-Type': 'application/json',
             },
         });
-        console.log("response",response);
-        let data = response.data.data;
-        console.log("data",data);
 
-        return data;
+        console.log("API Response in AddToCart:", response.data); // Log the full response here
+
+        return response.data; // Return response data, which includes success, message, totalPrice
     } catch (error) {
-        console.log("error",error)
+        console.log("Error in AddToCart API:", error);
+        throw error; // Re-throw the error for the component to handle
     }
+};
 
-}
 export default AddToCart;
