@@ -337,7 +337,8 @@ exports.getCategory = async function(req,res){
 exports.addAddress = async function (req, res) {
     let id = req.params.id; // User ID from request parameters
     let newAddress = req.body.Address;
-    console.log("new address",newAddress) // New address from the request body
+    console.log("new address",newAddress) 
+    console.log('req.body',req.body);// New address from the request body
 
     // Check if the Address field is addt
     if (!newAddress) {

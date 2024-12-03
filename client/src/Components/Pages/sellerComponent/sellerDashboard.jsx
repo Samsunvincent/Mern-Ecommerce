@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import GetUser from "../../functionalities/getUser";
 import { useParams } from "react-router-dom";
 import UpdateUser from "../../functionalities/updateUser";
+import PostAddress from "../../functionalities/PostAddress";
 
 export default function SellerDashboard() {
     const [userName, setUserName] = useState("");
@@ -11,7 +12,12 @@ export default function SellerDashboard() {
     const [showManageAddress, setShowManageAddress] = useState(false);
     const [showAddressForm,setShowAddressForm] = useState(false);
     const [reloadProfile, setReloadProfile] = useState(false); // Triggers reload of profile section
-
+    const [name,setName] = useState('');
+    const [street,setStreet] = useState('');
+    const [city,setCity] = useState('');
+    const [state,setState] = useState('');
+    const [country,setCountry] = useState('');
+    const [pincode,setPincode] = useState('');
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -150,9 +156,37 @@ export default function SellerDashboard() {
         setShowManageAddress(true);
     };
 
-    const addAddress = useCallback(()=>{
-        console.log("hello world")
-    })
+
+    const addAddress = useCallback(async (e) => {
+
+        e.preventDefault()
+        const id = params.id; 
+        const Address = {
+            name,
+            street,
+            city,
+            state,
+            country,
+            pincode,
+        };
+    
+        // Ensure all required fields are provided
+        if (!name || !street || !city || !state || !country || !pincode) {
+            console.error("All fields are required to add an address");
+            return;
+        }
+    
+        try {
+            const response = await PostAddress(id, Address); // Call the PostAddress function
+            console.log("Address added successfully:", response);
+            // Handle successful response, e.g., display success message or update UI
+        } catch (error) {
+            console.error("Error adding address:", error.message);
+            // Handle error, e.g., display an error message
+        }
+    }, [params.id, name, street, city, state, country, pincode]);
+    
+    
     return (
         <>
             <div className="bg-light">
@@ -499,7 +533,7 @@ export default function SellerDashboard() {
                                             style={{ cursor: "pointer", color: "rgb(40,116,240)" }}
                                         >
                                             <img
-                                                src="data:image/svg+xml;base64,..."
+                                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGZpbGw9IiMyMTc1RkYiIGQ9Ik0xMS4yNSA2Ljc1aC00LjV2NC41aC0xLjV2LTQuNUguNzV2LTEuNWg0LjVWLjc1aDEuNXY0LjVoNC41Ii8+PHBhdGggZD0iTS0zLTNoMTh2MThILTMiLz48L2c+PC9zdmc+"
                                                 alt=""
                                                 className="px-3"
                                             />
@@ -525,6 +559,7 @@ export default function SellerDashboard() {
                                                             className="p-2 w-100"
                                                             name="name"
                                                             id="name1"
+                                                            onChange={(e) =>setName(e.target.value)}
                                                         />
                                                         <label htmlFor="name" className="lBFHyk">
                                                             Name
@@ -538,6 +573,7 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="state"
                                                             id="state"
+                                                            onChange={(e) =>setState(e.target.value)}
                                                         />
                                                         <label htmlFor="city" className="lBFHyk">
                                                             State
@@ -549,6 +585,7 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="city"
                                                             id="city"
+                                                            onChange={(e) =>setCity(e.target.value)}
                                                         />
                                                         <label htmlFor="city" className="lBFHyk">
                                                             City
@@ -562,6 +599,7 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="street"
                                                             id="street"
+                                                            onChange={(e) =>setStreet(e.target.value)}
                                                         />
                                                         <label htmlFor="name" className="lBFHyk">
                                                             Street
@@ -573,6 +611,7 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="pincode"
                                                             id="pincode"
+                                                            onChange={(e) =>setPincode(e.target.value)}
                                                         />
                                                         <label htmlFor="name" className="lBFHyk">
                                                             Pincode
@@ -586,6 +625,7 @@ export default function SellerDashboard() {
                                                             className="p-2 w-100"
                                                             name="country"
                                                             id="country"
+                                                            onChange={(e) =>setCountry(e.target.value)}
                                                         />
                                                         <label htmlFor="name" className="lBFHyk">
                                                             Country
@@ -611,6 +651,9 @@ export default function SellerDashboard() {
                             </div>
                         </div>
                     )}
+                    <div>
+                        <div id="address-data">hello</div>
+                    </div>
 
                 </div>
             </div>
