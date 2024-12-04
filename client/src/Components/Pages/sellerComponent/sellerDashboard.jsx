@@ -8,16 +8,23 @@ export default function SellerDashboard() {
     const [userName, setUserName] = useState("");
     const params = useParams();
     const [userData, setUserData] = useState("");
+
+
     const [showProfile, setShowProfile] = useState(true);
     const [showManageAddress, setShowManageAddress] = useState(false);
-    const [showAddressForm,setShowAddressForm] = useState(false);
+    const [showPan, setShowPan] = useState(false);
+
+
+    const [showAddressForm, setShowAddressForm] = useState(false);
+    // const [closeAddressForm, setCloseAddressForm] = useState(true);
     const [reloadProfile, setReloadProfile] = useState(false); // Triggers reload of profile section
-    const [name,setName] = useState('');
-    const [street,setStreet] = useState('');
-    const [city,setCity] = useState('');
-    const [state,setState] = useState('');
-    const [country,setCountry] = useState('');
-    const [pincode,setPincode] = useState('');
+    const [name, setName] = useState('');
+    const [street, setStreet] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [country, setCountry] = useState('');
+    const [pincode, setPincode] = useState('');
+    const [addressData, setAddressData] = useState('')
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -33,6 +40,8 @@ export default function SellerDashboard() {
 
                 setUserName(fetchedUserData.name);
                 setUserData(fetchedUserData);
+                setAddressData(fetchedUserData.Address);
+
             } catch (error) {
                 console.error("Error fetching user data:", error);
             }
@@ -51,15 +60,13 @@ export default function SellerDashboard() {
                 name.value = userData.name || "";
                 email.value = userData.email || "";
                 phone.value = userData.phone_number || "";
-            } else {
-                alert("Internal server error");
             }
         };
 
         if (userData) {
             loadFetchedData();
         }
-    }, [userData,reloadProfile]); // Runs only when userData changes
+    }, [userData, reloadProfile]); // Runs only when userData changes
 
     useEffect(() => {
         // Initialize the edit, save, cancel functionality after userData is set
@@ -69,8 +76,8 @@ export default function SellerDashboard() {
     }, [userData]); // Triggered when userData changes
 
     useEffect(() => {
-    setShowProfile(true); // Show Personal Information by default
-}, []);
+        setShowProfile(true); // Show Personal Information by default
+    }, []);
 
 
     function initializeEditSaveCancelLogic() {
@@ -145,22 +152,30 @@ export default function SellerDashboard() {
     const showProfileSection = () => {
         setShowProfile(true);
         setShowManageAddress(false);
-    
+        setShowPan(false)
+
         // Toggle `reloadProfile` to force reloading content
         setReloadProfile((prev) => !prev);
     };
-    
+
 
     const showManageAddressSection = () => {
         setShowProfile(false);
         setShowManageAddress(true);
+        setShowPan(false)
     };
+
+    const showPanInformation = () => {
+        setShowPan(true);
+        setShowProfile(false);
+        setShowManageAddress(false)
+    }
 
 
     const addAddress = useCallback(async (e) => {
+        e.preventDefault();
 
-        e.preventDefault()
-        const id = params.id; 
+        const id = params.id;
         const Address = {
             name,
             street,
@@ -169,13 +184,17 @@ export default function SellerDashboard() {
             country,
             pincode,
         };
-    
-        // Ensure all required fields are provided
-        if (!name || !street || !city || !state || !country || !pincode) {
-            console.error("All fields are required to add an address");
+
+        // Check for missing fields
+        const missingFields = Object.entries(Address)
+            .filter(([key, value]) => !value) // Filter out empty or falsy fields
+            .map(([key]) => key); // Extract the field names
+
+        if (missingFields.length > 0) {
+            console.error("The following fields are missing:", missingFields.join(", "));
             return;
         }
-    
+
         try {
             const response = await PostAddress(id, Address); // Call the PostAddress function
             console.log("Address added successfully:", response);
@@ -185,8 +204,8 @@ export default function SellerDashboard() {
             // Handle error, e.g., display an error message
         }
     }, [params.id, name, street, city, state, country, pincode]);
-    
-    
+
+
     return (
         <>
             <div className="bg-light">
@@ -271,8 +290,9 @@ export default function SellerDashboard() {
                                             </button>
                                         </div>
                                         <div className="px-5 pt-3 button-hov">
-                                            <button className="remove-button-style mb-3">
+                                            <button className="remove-button-style mb-3" onClick={showPanInformation}>
                                                 Pan Card Information
+
                                             </button>
                                         </div>
                                     </div>
@@ -523,35 +543,44 @@ export default function SellerDashboard() {
                                 className="pt-3 bg-white p-5 px-5"
                                 style={{ width: "50vw", marginLeft: 16 }}
                             >
-                                <div className="manage-adress-text pt-3" id="empty-manage">
+                                <div className="manage-adress-text pt-3" id="empty-manage" style={{ fontSize: "18px", fontWeight: "700px", }}>
                                     Manage Addresses
                                 </div>
                                 <div className="pt-5">
-                                    <div className="p-3 border" id="newaddress">
-                                        <span
-                                            onClick={() => setShowAddressForm(true)} // Trigger showing the address form
-                                            style={{ cursor: "pointer", color: "rgb(40,116,240)" }}
+                                    {!showAddressForm && (
+                                        <div
+                                            className="p-3 border d-flex align-items-center"
+                                            id="newaddress"
+                                            style={{ display: "flex", alignItems: "center" }}
                                         >
                                             <img
                                                 src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGZpbGw9IiMyMTc1RkYiIGQ9Ik0xMS4yNSA2Ljc1aC00LjV2NC41aC0xLjV2LTQuNUguNzV2LTEuNWg0LjVWLjc1aDEuNXY0LjVoNC41Ii8+PHBhdGggZD0iTS0zLTNoMTh2MThILTMiLz48L2c+PC9zdmc+"
                                                 alt=""
                                                 className="px-3"
+                                                style={{ marginRight: "8px" }}
                                             />
-                                            ADD A NEW ADDRESS
-                                        </span>
-                                    </div>
+                                            <span
+                                                onClick={() => setShowAddressForm(true)}
+                                                style={{ cursor: "pointer", color: "rgb(40,116,240)" }}
+                                            >
+                                                ADD A NEW ADDRESS
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Address form */}
+                                {/* Address Form */}
                                 {showAddressForm && (
                                     <div
                                         id="address-form"
                                         style={{ backgroundColor: "rgb(245,250,255)" }}
                                         className="p-3"
                                     >
-                                        <form onSubmit={addAddress}> {/* Handle form submission */}
+                                        <form onSubmit={addAddress}>
                                             <div>
-                                                <div style={{ color: "rgb(40,116,240)" }}>ADD A NEW ADDRESS</div>
+                                                <div style={{ color: "rgb(40,116,240)" }}>
+                                                    ADD A NEW ADDRESS
+                                                </div>
                                                 <div className="d-flex pt-5 gap-5">
                                                     <div className="input-container w-100">
                                                         <input
@@ -559,7 +588,7 @@ export default function SellerDashboard() {
                                                             className="p-2 w-100"
                                                             name="name"
                                                             id="name1"
-                                                            onChange={(e) =>setName(e.target.value)}
+                                                            onChange={(e) => setName(e.target.value)}
                                                         />
                                                         <label htmlFor="name" className="lBFHyk">
                                                             Name
@@ -573,9 +602,9 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="state"
                                                             id="state"
-                                                            onChange={(e) =>setState(e.target.value)}
+                                                            onChange={(e) => setState(e.target.value)}
                                                         />
-                                                        <label htmlFor="city" className="lBFHyk">
+                                                        <label htmlFor="state" className="lBFHyk">
                                                             State
                                                         </label>
                                                     </div>
@@ -585,7 +614,7 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="city"
                                                             id="city"
-                                                            onChange={(e) =>setCity(e.target.value)}
+                                                            onChange={(e) => setCity(e.target.value)}
                                                         />
                                                         <label htmlFor="city" className="lBFHyk">
                                                             City
@@ -599,9 +628,9 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="street"
                                                             id="street"
-                                                            onChange={(e) =>setStreet(e.target.value)}
+                                                            onChange={(e) => setStreet(e.target.value)}
                                                         />
-                                                        <label htmlFor="name" className="lBFHyk">
+                                                        <label htmlFor="street" className="lBFHyk">
                                                             Street
                                                         </label>
                                                     </div>
@@ -611,9 +640,9 @@ export default function SellerDashboard() {
                                                             className="p-2"
                                                             name="pincode"
                                                             id="pincode"
-                                                            onChange={(e) =>setPincode(e.target.value)}
+                                                            onChange={(e) => setPincode(e.target.value)}
                                                         />
-                                                        <label htmlFor="name" className="lBFHyk">
+                                                        <label htmlFor="pincode" className="lBFHyk">
                                                             Pincode
                                                         </label>
                                                     </div>
@@ -625,38 +654,96 @@ export default function SellerDashboard() {
                                                             className="p-2 w-100"
                                                             name="country"
                                                             id="country"
-                                                            onChange={(e) =>setCountry(e.target.value)}
+                                                            onChange={(e) => setCountry(e.target.value)}
                                                         />
-                                                        <label htmlFor="name" className="lBFHyk">
+                                                        <label htmlFor="country" className="lBFHyk">
                                                             Country
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div className="pt-3">
+                                                <div className="d-flex gap-3 pt-3">
                                                     <button
                                                         type="submit"
                                                         className="remove-button-style bg-white border border-0"
                                                         style={{
                                                             border: "2px solid rgb(245,245,245)",
                                                             color: "rgb(69,69,69)",
+                                                            backgroundColor: "rgb(40,116,240)",
                                                         }}
                                                     >
                                                         Save
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="remove-button-style"
+                                                        onClick={() => setShowAddressForm(false)}
+                                                    >
+                                                        Cancel
                                                     </button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
                                 )}
+
+                                {/* Added address */}
+                                <div className="mt-4">
+                                    <h4 className="mb-3">Added Addresses</h4>
+                                    {addressData.length > 0 ? (
+                                        <div>
+                                            {addressData.map((address, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="p-2 mb-2 bg-light"
+                                                    style={{
+                                                        border: "1px solid rgb(230,230,230)",
+                                                        borderRadius: "6px",
+                                                        padding: "16px",
+                                                    }}
+                                                >
+                                                    <h5 className="mb-2" style={{ color: "rgb(40,116,240)" }}>
+                                                        Address {index + 1}
+                                                    </h5>
+                                                    <p>
+                                                        <strong>Name:</strong> {address.name}
+                                                    </p>
+                                                    <p>
+                                                        <strong>Street:</strong> {address.street}
+                                                    </p>
+                                                    <p>
+                                                        <strong>City:</strong> {address.city}
+                                                    </p>
+                                                    <p>
+                                                        <strong>State:</strong> {address.state}
+                                                    </p>
+                                                    <p>
+                                                        <strong>Pincode:</strong> {address.pincode}
+                                                    </p>
+                                                    <p>
+                                                        <strong>Country:</strong> {address.country}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div>No addresses added yet.</div>
+                                    )}
+                                </div>
+
                             </div>
                         </div>
                     )}
-                    <div>
-                        <div id="address-data">hello</div>
-                    </div>
+
+
+                    {showPan && (
+                        <div>
+                           hello world
+                        </div>
+                    )}
 
                 </div>
             </div>
+
         </>
 
     )

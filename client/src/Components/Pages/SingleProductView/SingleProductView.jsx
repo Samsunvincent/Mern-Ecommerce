@@ -139,10 +139,10 @@ export default function SingleProductView() {
                                     </div>
                                     <div className="pt-4">
                                         <div className="productseller">Seller Details</div>
-                                        {singleData.sellerID ? (
+                                        {singleData.seller ? (
                                             <>
-                                                <div>Name: {singleData.sellerID.name}</div>
-                                                <div>Email: {singleData.sellerID.email}</div>
+                                                <div>Name: {singleData.seller.name}</div>
+                                                <div>Email: {singleData.seller.email}</div>
                                             </>
                                         ) : (
                                             <div>Seller information is unavailable</div>

@@ -9,6 +9,10 @@ const PostAddress = async (id, Address) => {
         }
         );
         console.log("Response from server:", response);
+        let data = response.data.data;
+        console.log("data from the post addres",data);
+
+        return data
 
     } catch (error) {
         console.error("Error in PostAddress:", error.message);
