@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Nav from "../../Nav/navOne";
 import NavTwo from "../../Nav/navTwo";
 import getAllProducts from "../../functionalities/getAllProducts";
@@ -7,6 +7,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
 import FooterComponent from "../../Footer/footerComponent";
+import Wishlist from "../../functionalities/WishlistRoute"; // Import your Wishlist function
+import { toast } from "react-toastify"; // Import Toastify
 
 const slides = [
   { imgSrc: "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/398ef080b952d576.jpg?q=20", alt: "Slide 1" },
@@ -17,14 +19,16 @@ const slides = [
 ];
 
 const Seller = () => {
-  const { id, usertype } = useParams(); // Retrieve route parameters
+  const { id, usertype, login } = useParams();
   const [allProducts, setAllProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]); // State for filtered products
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [wishlist, setWishlist] = useState([]); // Track wishlist state
+  const navigate = useNavigate();
 
-  // Fetch all products on component mount
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsLoading(true);
       try {
         const data = await getAllProducts(id, usertype);
         if (Array.isArray(data)) {
@@ -32,24 +36,80 @@ const Seller = () => {
         } else {
           console.error("Fetched data is not an array:", data);
         }
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProducts();
-  }, [id, usertype]); // Dependency array ensures it re-runs when params change
+    const storedWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    setWishlist(storedWishlist);
 
-  // Render Product Card Component
+    fetchProducts();
+  }, [id, usertype]);
+
+  useEffect(() => {
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  const handleWishlistToggle = async (productId, event) => {
+    event.stopPropagation();
+
+    // Check if the user is logged in (i.e., the 'login' parameter should be present)
+    if (!login) {
+      toast.error("Please log in to continue!");
+      return;
+    }
+
+    try {
+      // Make the API call to add/remove from wishlist
+      await Wishlist(id, productId);
+
+      // Toggle the wishlist state in UI
+      if (wishlist.includes(productId)) {
+        // If product is in wishlist, remove it
+        const updatedWishlist = wishlist.filter((id) => id !== productId);
+        setWishlist(updatedWishlist);
+        toast.success("Removed from wishlist!", { position: "bottom-center" });
+      } else {
+        // If product is not in wishlist, add it
+        const updatedWishlist = [...wishlist, productId];
+        setWishlist(updatedWishlist);
+        toast.success("Added to wishlist!", { position: "bottom-center" });
+      }
+    } catch (error) {
+      console.error("Error adding/removing product from wishlist:", error);
+      toast.error("Something went wrong!", { position: "bottom-center" });
+    }
+  };
+
   const ProductCard = ({ product }) => {
-    const imageUrl = product.images?.[0]?.url
-      ? product.images[0].url.replaceAll("\\", "/")
-      : "default-image-path.jpg";
+    const imageUrl = product.images?.[0]?.url?.replaceAll("\\", "/") || "default-image-path.jpg";
+    const isInWishlist = wishlist.includes(product._id);
 
     return (
-      <div className="card" key={product._id}>
+      <div
+        className="card cursor-pointer"
+        key={product._id}
+        onClick={() => navigate(`/singleView/${login}/${id}/${usertype}/${product._id}`)}
+      >
+        <button
+          onClick={(e) => handleWishlistToggle(product._id, e)}
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "24px",
+            color: isInWishlist ? "red" : "gray", // Heart color based on wishlist status
+          }}
+        >
+          {isInWishlist ? "❤️" : "🤍"}
+        </button>
+        
         <img
           src={`http://localhost:3000/${imageUrl}`}
           className="card-img-top w-[309.15px] h-[309.15px]"
@@ -57,13 +117,20 @@ const Seller = () => {
         />
         <div className="card-body">
           <h5 className="card-title hover:text-sky-600">
-            {product.name.length > 100 ? product.name.slice(0, 100) + "..." : product.name}
+            {product.name.length > 100 ? `${product.name.slice(0, 100)}...` : product.name}
           </h5>
-          <p className="card-text" style={{ color: "red" }}>${product.price}</p>
+          <p className="card-text text-danger">${product.price}</p>
         </div>
       </div>
     );
   };
+
+  const renderProducts = (products) =>
+    products.length > 0 ? (
+      products.map((product) => <ProductCard key={product._id} product={product} />)
+    ) : (
+      <p>No products found.</p>
+    );
 
   return (
     <>
@@ -72,7 +139,6 @@ const Seller = () => {
 
       <div className="container-fluid">
         <div className="row">
-          {/* Main Content - Full Width */}
           <div className="col-12" id="mainContent">
             <div className="swiper-container">
               <Swiper
@@ -93,44 +159,25 @@ const Seller = () => {
               </Swiper>
             </div>
 
-            {/* Featured Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="featured">
               FEATURED
             </div>
             <div id="productsContainer" className="product-card container">
-              {isLoading ? (
-                <div>Loading...</div>
-              ) : filteredProducts.length > 0 ? ( // Display filtered products if available
-                filteredProducts.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))
-              ) : (
-                allProducts.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))
-              )}
+              {isLoading ? <div>Loading...</div> : renderProducts(filteredProducts.length ? filteredProducts : allProducts)}
             </div>
 
-            {/* Budget Products Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="budget">
               BUDGET PRODUCTS
             </div>
             <div className="product-card container">
-              {allProducts
-                .filter((product) => product.price < 1000) // Adjust price for budget products
-                .map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))}
+              {renderProducts(allProducts.filter((product) => product.price < 1000))}
             </div>
 
-            {/* New Arrivals Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="newarrivals">
               NEW ARRIVALS
             </div>
             <div className="product-card container">
-              {allProducts.slice(-5).reverse().map((product) => ( // Show last 5 products, reverse order
-                <ProductCard key={product._id} product={product} />
-              ))}
+              {renderProducts(allProducts.slice(-5).reverse())}
             </div>
           </div>
         </div>

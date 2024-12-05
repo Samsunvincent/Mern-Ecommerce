@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 
 
 
+
 exports.signin = async function (req, res) {
     let body = req.body;
     console.log("body :", body);
@@ -697,6 +698,200 @@ exports.removeCartData = async function (req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
+
+exports.addToWishlist = async function(req, res) {
+    let userId = req.params.id;  // Get user ID from the URL params
+    let p_id = req.params.p_id;  // Get product ID from the URL params
+
+    try {
+        // Find the user by userId
+        let userData = await user.findById(userId);
+
+        if (!userData) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if the product is already in the wishlist
+        let productIndex = userData.wishlist.findIndex(item => item.productId.toString() === p_id);
+
+        if (productIndex !== -1) {
+            // If the product exists in the wishlist, remove it
+            userData.wishlist.splice(productIndex, 1);
+            await userData.save();
+            return res.status(200).json({ message: 'Product removed from wishlist', wishlist: userData.wishlist });
+        } else {
+            // If the product doesn't exist in the wishlist, add it
+            userData.wishlist.push({ productId: p_id });
+            await userData.save();
+            return res.status(200).json({ message: 'Product added to wishlist', wishlist: userData.wishlist });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getWishlist = async function(req, res) {
+    try {
+        const id = req.params.id;
+
+        // Validate ID parameter
+        if (!id) {
+            let response = error_function({
+                success: false,
+                statusCode: 400,
+                message: "User ID is required",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Find the user in the database
+        const check_user = await user.findOne({ _id: id });
+
+        // Check if the user exists
+        if (!check_user) {
+            let response = error_function({
+                success: false,
+                statusCode: 404,
+                message: "User not found",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Get the user's wishlist
+        const wishlist = check_user.wishlist;
+
+        // Check if the wishlist exists or is empty
+        if (!wishlist || wishlist.length === 0) {
+            let response = error_function({
+                success: false,
+                statusCode: 404,
+                message: "Wishlist is empty or not found",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Initialize an array to store the product data
+        let products = [];
+
+        // Iterate over the wishlist and fetch the respective product data
+        for (let i = 0; i < wishlist.length; i++) {
+            const productId = wishlist[i].productId;
+
+            // Check if productId exists in the wishlist item
+            if (!productId) {
+                console.error(`Product ID missing in wishlist item: ${JSON.stringify(wishlist[i])}`);
+                continue; // Skip to the next item in the wishlist
+            }
+
+            // Fetch the product using productId
+            const productdata = await product.findById(productId);
+
+            if (productdata) {
+                // Add the product data to the products array
+                products.push(productdata);
+            } else {
+                console.error(`Product not found for ID: ${productId}`);
+            }
+        }
+
+        // If products were found, return them
+        if (products.length > 0) {
+            let response = success_function({
+                success: true,
+                statusCode: 200,
+                message: "Wishlist retrieved successfully",
+                data: products,
+            });
+            return res.status(response.statusCode).send(response);
+        } else {
+            let response = error_function({
+                success: false,
+                statusCode: 404,
+                message: "No products found in wishlist",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+    } catch (error) {
+        console.error("Error in getWishlist:", error);
+
+        // Handle any other server errors
+        let response = error_function({
+            success: false,
+            statusCode: 500,
+            message: "Internal server error. Please try again later.",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+};
+
+exports.deleteWishlist = async function (req, res) {
+    try {
+        const p_id  = req.params.p_id;
+
+        // Validate product ID
+        if (!p_id) {
+            const response = error_function({
+                success: false,
+                statusCode: 400,
+                message: "Product ID is required.",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Validate user existence in the database
+        const userId = req.params.id; // Assuming `req.user` contains the authenticated user's details
+        const userRecord = await user.findById(userId);
+
+        if (!userRecord) {
+            const response = error_function({
+                success: false,
+                statusCode: 404,
+                message: "User not found.",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Check if the product exists in the user's wishlist
+        const productIndex = userRecord.wishlist.findIndex(
+            (item) => item.productId === p_id
+        );
+
+        if (productIndex === -1) {
+            const response = error_function({
+                success: false,
+                statusCode: 404,
+                message: "Product not found in the wishlist.",
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
+        // Remove the product from the wishlist
+        userRecord.wishlist.splice(productIndex, 1); // Remove the product
+        await userRecord.save(); // Save the updated user record
+
+        const response = success_function({
+            success: true,
+            statusCode: 200,
+            message: "Product removed from wishlist successfully.",
+        });
+        return res.status(response.statusCode).send(response);
+    } catch (error) {
+        console.error("Error in deleteWishlist:", error);
+
+        // Handle unexpected server errors
+        const response = error_function({
+            success: false,
+            statusCode: 500,
+            message: "Internal server error. Please try again later.",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+};
+
+
+
 
 
 

@@ -17,8 +17,11 @@ function setAccessControl(access_types){
 Router.post('/addProducts/:id', upload, productController.addProducts);
 Router.get('/getProducts/:id/:usertype',productController.getProducts)
 
-// Router.get('/getAddedProducts/:id',productController.getAddedProducts);
+Router.get('/getAddedProducts/:id',productController.getAddedProducts);
 Router.get('/getSingleViewProduct/:id',productController.getSingleViewProduct)
+
+Router.delete('/deleteProducts/:id/:p_id',productController.deleteAddedProducts);
+Router.put('/updateProducts/:id/:p_id',productController.updateAddedProducts)
 
 
 module.exports = Router

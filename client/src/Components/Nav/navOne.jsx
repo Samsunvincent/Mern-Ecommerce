@@ -17,23 +17,37 @@ export default function Nav() {
     const handleLogout = useCallback(() => {
         Logout(login, navigate); // Pass login and navigate to the Logout function
     }, [login, navigate]); // Dependencies
-    
-    
+
     const handleAddProducts = useCallback(() => {
-         // Retrieve token_key from localStorage
+        // Navigate to Add Products page
         if (login) {
             navigate(`/addProducts/${login}/${id}/${usertype}`);
         } else {
-            console.log("Token key is not available.");
+            console.log("User is not logged in.");
         }
-    }, [navigate, usertype, id]); // Add necessary dependencies
+    }, [navigate, usertype, id, login]); // Add necessary dependencies
 
-    const handleprofile = useCallback(() => {
-        if(login && usertype==="Seller"){
-            navigate(`/sellerDashboard/${login}/${id}/${usertype}`)
+    const handleProfile = useCallback(() => {
+        // Navigate to Seller Dashboard
+        if (login && usertype === "Seller") {
+            navigate(`/sellerDashboard/${login}/${id}/${usertype}`);
+        }else if(login && usertype === "Buyer"){
+            navigate(`/buyerDashboard/${login}/${id}/${usertype}`)
         }
+    }, [navigate, usertype, id, login]);
+
+    const handleCartClick = useCallback(() => {
+        if (login) {
+            navigate(`/getcartdata/${login}/${id}/${usertype}`);
+        } else {
+            alert("Please log in to access the cart.");
+        }
+    }, [navigate, usertype, id, login]);
+
+    const handleWishList = useCallback(() =>{
+        navigate(`/wishlist/${login}/${id}/${usertype}`)
     })
-    
+
     return (
         <>
             <div className="d-flex align-items-center f-nav-p justify-content-between px-4 py-2">
@@ -55,7 +69,11 @@ export default function Nav() {
                         <a href="#">Find a Store</a>
                     </li>
                     <li>
-                        <i className="fa fa-shopping-cart" style={{ fontSize: 24 }} onClick={() => console.log("Go to Cart clicked")} />
+                        <i
+                            className="fa fa-shopping-cart"
+                            style={{ fontSize: 24 }}
+                            onClick={handleCartClick} // Call cart handler
+                        />
                     </li>
 
                     {/* Add Products link for Seller */}
@@ -81,7 +99,7 @@ export default function Nav() {
                                 <i className="fa fa-user" aria-hidden="true" id="profile"></i>
                             </button>
                             <ul className="dropdown-menu">
-                                <li onClick={handleprofile}>
+                                <li onClick={handleProfile}>
                                     <a className="dropdown-item" href="#">
                                         Manage profile
                                     </a>
@@ -89,6 +107,11 @@ export default function Nav() {
                                 <li>
                                     <a className="dropdown-item" href="#">
                                         Orders
+                                    </a>
+                                </li>
+                                <li onClick={handleWishList}>
+                                    <a className="dropdown-item" href="#">
+                                        Wishlist
                                     </a>
                                 </li>
                                 <li>
@@ -103,7 +126,6 @@ export default function Nav() {
                         </div>
                     )}
                 </ul>
-
             </div>
         </>
     );

@@ -27,6 +27,13 @@ let user_Schema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : "userType"
     },
+    wishlist : [
+        {
+            productId : {
+                type : String
+            }
+        }
+    ],
     orders: [
         {
             productId: {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import GetUser from "../../functionalities/getUser";
-import { useNavigate, useParams } from "react-router-dom";
+import {  useParams } from "react-router-dom";
 import UpdateUser from "../../functionalities/updateUser";
 import PostAddress from "../../functionalities/PostAddress";
 
@@ -8,7 +8,6 @@ export default function SellerDashboard() {
     const [userName, setUserName] = useState("");
     const params = useParams();
     const [userData, setUserData] = useState("");
-    const navigate = useNavigate();
 
 
     const [showProfile, setShowProfile] = useState(true);
@@ -207,10 +206,7 @@ export default function SellerDashboard() {
     }, [params.id, name, street, city, state, country, pincode]);
 
 
-    const handleAddedProducts = useCallback(() =>{
-        let id = params.id
-        navigate(`/products/${id}`)
-    })
+
 
 
     return (
@@ -328,7 +324,7 @@ export default function SellerDashboard() {
 
                                     <div>
                                         <div className="px-5 pt-3 button-hov">
-                                            <button className="remove-button-style mb-3" onClick={handleAddedProducts}>Products</button>
+                                            <button className="remove-button-style mb-3" >Gift card</button>
                                         </div>
                                         <div className="px-5 pt-3 button-hov">
                                             <button className="remove-button-style mb-3">Saved UPI</button>
@@ -744,7 +740,7 @@ export default function SellerDashboard() {
 
                     {showPan && (
                         <div>
-                           hello world
+                            hello world
                         </div>
                     )}
 

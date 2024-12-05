@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import getCategory from "../functionalities/getCategory";
 import filterCategory from "../functionalities/filterCategory";
+import getAllProducts from "../functionalities/getAllProducts";
 
 // Custom hook for fetching categories
 const useCategories = () => {
@@ -34,13 +35,51 @@ export default function NavTwo({ setFilteredProducts }) {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [filterError, setFilterError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+  const [allProducts, setAllProducts] = useState([]); // State for all products
   const { categories, isLoading, error } = useCategories();
+
+  // Fetch all products on mount
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const data = await getAllProducts();
+        if (Array.isArray(data)) {
+          setAllProducts(data);
+          setFilteredProducts(data); // Initialize with all products
+        } else {
+          throw new Error("Failed to fetch products.");
+        }
+      } catch (err) {
+        console.error(err.message);
+        setFilteredProducts([]); // Reset filtered products on error
+      }
+    };
+
+    fetchAllProducts();
+  }, [setFilteredProducts]);
 
   // Toggle offcanvas state
   const toggleOffcanvas = useMemo(
     () => () => setShowOffcanvas((prev) => !prev),
     []
   );
+
+  // Handle search input
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    // Filter products based on search query
+    if (query) {
+      const filtered = allProducts.filter((product) =>
+        product.name.toLowerCase().includes(query)
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(allProducts); // Show all products if query is empty
+    }
+  };
 
   // Handle category selection
   const handleCategoryChange = async (e) => {
@@ -51,18 +90,18 @@ export default function NavTwo({ setFilteredProducts }) {
       try {
         const data = await filterCategory(value);
         if (data.success !== false) {
-          setFilteredProducts(data); // Update parent component with filtered products
+          setFilteredProducts(data);
           setFilterError(null);
         } else {
           setFilterError(data.message || "Failed to fetch filtered products.");
-          setFilteredProducts([]); // Clear filtered products on failure
+          setFilteredProducts([]);
         }
       } catch (err) {
         setFilterError("An error occurred while filtering products.");
-        setFilteredProducts([]); // Clear filtered products on error
+        setFilteredProducts([]);
       }
     } else {
-      setFilteredProducts([]); // Clear filtered products if no category is selected
+      setFilteredProducts(allProducts); // Reset to all products if no category is selected
       setFilterError(null);
     }
   };
@@ -78,7 +117,13 @@ export default function NavTwo({ setFilteredProducts }) {
           </button>
 
           {/* Search Box */}
-          <input type="text" className="form-control" placeholder="Search..." />
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={handleSearch}
+          />
         </div>
 
         {/* Navigation Links */}

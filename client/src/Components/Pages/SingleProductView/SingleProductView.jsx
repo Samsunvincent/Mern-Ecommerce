@@ -6,7 +6,7 @@ import NavTwo from "../../Nav/navTwo";
 import AddToCart from "../../functionalities/addToCart";
 
 export default function SingleProductView() {
-    const [singleData, setSingleData] = useState(null); // Store fetched product data
+    const [singleData, setSingleData] = useState(null); // Store fetched product dataa
     const [enlargedImage, setEnlargedImage] = useState(""); // Store currently enlarged image
     const params = useParams(); // Get params from the URL
     const navigate = useNavigate(); // Hook for navigation
