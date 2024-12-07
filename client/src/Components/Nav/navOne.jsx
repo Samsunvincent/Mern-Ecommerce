@@ -48,6 +48,10 @@ export default function Nav() {
         navigate(`/wishlist/${login}/${id}/${usertype}`)
     })
 
+    const handleOrder = useCallback(() =>{
+        navigate(`/orderdata/${login}/${id}/${usertype}`)
+    })
+
     return (
         <>
             <div className="d-flex align-items-center f-nav-p justify-content-between px-4 py-2">
@@ -104,7 +108,7 @@ export default function Nav() {
                                         Manage profile
                                     </a>
                                 </li>
-                                <li>
+                                <li onClick={handleOrder}>
                                     <a className="dropdown-item" href="#">
                                         Orders
                                     </a>

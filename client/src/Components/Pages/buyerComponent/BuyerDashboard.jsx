@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import GetUser from "../../functionalities/getUser";
-import {  useParams } from "react-router-dom";
+import {  useNavigate, useParams } from "react-router-dom";
 import UpdateUser from "../../functionalities/updateUser";
 import PostAddress from "../../functionalities/PostAddress";
+import Nav from "../../Nav/navOne";
 
 export default function SellerDashboard() {
     const [userName, setUserName] = useState("");
     const params = useParams();
     const [userData, setUserData] = useState("");
+    const{login,id,usertype} = useParams()
 
 
     const [showProfile, setShowProfile] = useState(true);
     const [showManageAddress, setShowManageAddress] = useState(false);
     const [showPan, setShowPan] = useState(false);
+
+    const navigate = useNavigate(   )
 
 
     const [showAddressForm, setShowAddressForm] = useState(false);
@@ -205,12 +209,17 @@ export default function SellerDashboard() {
         }
     }, [params.id, name, street, city, state, country, pincode]);
 
+    const handleMyOrders = useCallback(() =>{
+        navigate(`/orderdata/${login}/${id}/${usertype}`)
+    })
+
 
 
 
 
     return (
         <>
+    
             <div className="bg-light">
                 <div className="settings-sizing d-flex container pt-3">
                     {/* Sidebar Content */}
@@ -241,13 +250,16 @@ export default function SellerDashboard() {
                                         style={{
                                             display: "flex",
                                             alignItems: "center",
+                                            cursor : "pointer"
                                         }}
+                                        onClick={handleMyOrders}
                                     >
                                         <img
                                             src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDE4Ij48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjY5NCAtMTEpIj48ZWxsaXBzZSBjeD0iMjAuNTU3IiBjeT0iMjAiIHJ4PSIyMC41NTciIHJ5PSIyMCIvPjxwYXRoIGZpbGw9IiMyODc0RjEiIGQ9Ik05IDExdjE3LjEwOGMwIC40OTMuNDEuODkyLjkxOC44OTJoNC45M3YtNS4yNTdoLTMuMDMzbDQuOTEyLTQuNzcgNC45NzIgNC44M2gtMy4wMzVWMjloMTIuNDE3Yy41MDcgMCAuOTE4LS40LjkxOC0uODkyVjExSDl6Ii8+PC9nPjwvc3ZnPg=="
                                             alt=""
                                             className="px-3"
                                             style={{ marginRight: "8px" }}
+                                            
                                         />
                                         MY ORDERS
                                     </span>

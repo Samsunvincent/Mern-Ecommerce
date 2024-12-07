@@ -1,9 +1,10 @@
 import axios from "axios";
 
-const Buynow = async function(body, id) {
+const Buynow = async function (data, userId) {
     try {
         const response = await axios.post(
-            `http://localhost:3000/placeOrders/${id}`,body, 
+            `http://localhost:3000/placeOrders/${userId}`,
+            { products: data.products },  // Send the products array as the body
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -11,16 +12,14 @@ const Buynow = async function(body, id) {
             }
         );
         console.log('Response from order: ', response);
-        
-        // Ensure response data exists and return the order
+
         if (response.data) {
-            return response.data;
+            return response.data; // Return the order data to be handled by the component
         } else {
             throw new Error('Invalid response structure');
         }
     } catch (error) {
         console.error("Error placing order:", error);
-        // Return a structured error object that can be used by the component
         return { success: false, message: error.message || "Something went wrong" };
     }
 };

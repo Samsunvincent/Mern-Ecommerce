@@ -21,6 +21,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import WishlistContainer from './Components/Pages/WishList/Wishlist';
 import PlaceOrder from './Components/Pages/PlaceOrder/PlaceOrder';
+import OrderData from './Components/Pages/PlaceOrder/OrderData';
 
 
 
@@ -46,6 +47,7 @@ function App() {
           <Route path='/buyerDashboard/:id/:p_id/:usertype' element={<BuyerDashboard />} />
           <Route path='/wishlist/:login/:id/:usertype' element={<WishlistContainer/>}/>
           <Route path='/buynow/:login/:id/:usertype/:p_id/:price' element={<PlaceOrder/>}/>
+          <Route path='/orderdata/:login/:id/:usertype' element={<OrderData/>}/>
 
           {/* Base route */}
           <Route path='/' element={<IndexComponent />} />

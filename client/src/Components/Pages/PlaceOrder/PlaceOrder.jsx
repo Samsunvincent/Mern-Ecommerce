@@ -91,34 +91,41 @@ export default function PlaceOrder() {
 
     const handlePlaceOrder = useCallback(() => {
         const postOrder = async function () {
-            // Calculate the total price
+            // Calculate the total price for the selected quantity
             const totalPrice = finalPrice * quantity;
             console.log('totalPrice', totalPrice);
-
+    
+            // Structure the request data according to the server expectations
             let data = {
-                productId: p_id,
-                quantity,
-                totalPrice,
+                products: [
+                    {
+                        productId: p_id, // productId of the product being ordered
+                        quantity,        // quantity selected by the user
+                        totalPrice,      // calculated total price for the product
+                    }
+                ],
             };
-
+    
             try {
-                const order = await Buynow(data, id); // Assuming Buynow function takes `data` and `id`
-                console.log("order", order);
-
-                // Display the server message in a toast if the order was successful
-                if (order) {
+                // Call the Buynow function to send the order data
+                const order = await Buynow(data, id); // Passing data and userId (id)
+    
+                // Handle the server response
+                if (order.success) {
                     // Success toast
                     toast.success(order.message || 'Order placed successfully!');
+                } else {
+                    toast.error(order.message || 'Something went wrong');
                 }
             } catch (error) {
                 console.error("Error placing the order", error);
-                // Display error in case of failure
                 toast.error(error.message || 'Something went wrong');
             }
         };
-
+    
         postOrder();
-    }, [finalPrice, quantity, p_id, id, selectedAddress, orderConfirmationEmail]);
+    }, [finalPrice, quantity, p_id, id]);
+    
 
     return (
         <>

@@ -948,15 +948,15 @@ exports.deleteWishlist = async function (req, res) {
 
 
 exports.placeOrders = async function (req, res) {
-    let { productId, quantity = 1, totalPrice } = req.body;
+    let { products } = req.body; // Array of { productId, quantity, totalPrice }
     let userId = req.params.id;
 
     // Check required fields
-    if (!productId || !quantity) {
+    if (!products || products.length === 0) {
         let response = error_function({
             success: false,
             statusCode: 400,
-            message: "Product ID and quantity are required",
+            message: "Products array is required",
         });
         return res.status(response.statusCode).send(response);
     }
@@ -982,67 +982,84 @@ exports.placeOrders = async function (req, res) {
             return res.status(response.statusCode).send(response);
         }
 
-        // Check if the product exists
-        let matchProduct = await product.findOne({ _id: productId });
-        if (!matchProduct) {
-            let response = error_function({
-                success: false,
-                statusCode: 400,
-                message: "Product not found",
-            });
-            return res.status(response.statusCode).send(response);
-        }
+        // Iterate over the products array to validate and process each product
+        let orderSummary = [];
+        for (const { productId, quantity = 1, totalPrice } of products) {
+            // Check if productId and quantity are provided
+            if (!productId || quantity <= 0) {
+                let response = error_function({
+                    success: false,
+                    statusCode: 400,
+                    message: `Product ID and valid quantity are required for all products`,
+                });
+                return res.status(response.statusCode).send(response);
+            }
 
-        // Check if the quantity requested is available in stock
-        if (quantity > matchProduct.stock) {
-            let response = error_function({
-                success: false,
-                statusCode: 400,
-                message: `Insufficient stock. Available stock is ${matchProduct.stock}`,
-            });
-            return res.status(response.statusCode).send(response);
-        }
+            // Check if the product exists
+            let matchProduct = await product.findOne({ _id: productId });
+            if (!matchProduct) {
+                let response = error_function({
+                    success: false,
+                    statusCode: 400,
+                    message: `Product not found for ID: ${productId}`,
+                });
+                return res.status(response.statusCode).send(response);
+            }
 
-        // If totalPrice is not provided, calculate it
-        if (!totalPrice) {
-            totalPrice = matchProduct.price * quantity; // Assuming 'price' field exists in product schema
-        }
+            // Check if the quantity requested is available in stock
+            if (quantity > matchProduct.stock) {
+                let response = error_function({
+                    success: false,
+                    statusCode: 400,
+                    message: `Insufficient stock for product ID: ${matchProduct.name}. Available stock is ${matchProduct.stock}`,
+                });
+                return res.status(response.statusCode).send(response);
+            }
 
-        // Check if the product is already ordered
-        let existingOrder = matchId.orders.find(order => order.productId === productId);
+            // Calculate total price if not provided
+            let calculatedTotalPrice = totalPrice || matchProduct.price * quantity;
 
-        if (existingOrder) {
-            // If product is already ordered, update the quantity and total price
-            existingOrder.quantity += quantity;
-            existingOrder.totalPrice += totalPrice;
-        } else {
-            // Otherwise, add a new order
-            matchId.orders.push({
+            // Check if the product is already ordered
+            let existingOrder = matchId.orders.find(order => order.productId === productId);
+
+            if (existingOrder) {
+                // If product is already ordered, update the quantity and total price
+                existingOrder.quantity += quantity;
+                existingOrder.totalPrice += calculatedTotalPrice;
+            } else {
+                // Otherwise, add a new order
+                matchId.orders.push({
+                    productId,
+                    quantity,
+                    totalPrice: calculatedTotalPrice,
+                });
+            }
+
+            // Reduce the stock of the product
+            matchProduct.stock -= quantity;
+
+            // Save the updated product data
+            await matchProduct.save();
+
+            // Add to order summary
+            orderSummary.push({
                 productId,
-                quantity,
-                totalPrice,
+                quantity: existingOrder ? existingOrder.quantity : quantity,
+                totalPrice: existingOrder
+                    ? existingOrder.totalPrice
+                    : calculatedTotalPrice,
             });
         }
 
-        // Reduce the stock of the product
-        matchProduct.stock -= quantity;
-
-        // Save the updated user and product data
+        // Save the updated user data
         await matchId.save();
-        await matchProduct.save(); // Save the updated product stock
 
-        // Respond with success
+        // Respond with success and the order summary
         let response = {
             success: true,
             statusCode: 200,
-            message: existingOrder
-                ? "Order updated successfully"
-                : "Order placed successfully",
-            order: {
-                productId,
-                quantity: existingOrder ? existingOrder.quantity : quantity,
-                totalPrice: existingOrder ? existingOrder.totalPrice : totalPrice,
-            },
+            message: "Order(s) placed successfully",
+            orders: orderSummary,
         };
         return res.status(response.statusCode).send(response);
 
@@ -1055,6 +1072,139 @@ exports.placeOrders = async function (req, res) {
         });
         return res.status(response.statusCode).send(response);
     }
+};
+
+exports.getOrders = async function(req, res) {
+    let id = req.params.id;
+
+    // Check if user ID is provided
+    if (!id) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "Please login to continue",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Find user by ID
+    let findOrders = await user.findOne({ _id: id });
+    if (!findOrders) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "No user found",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Get the user's orders
+    let ordersdata = findOrders.orders;
+    if (!ordersdata || ordersdata.length === 0) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "No orders yet",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    try {
+        // Map through each order and retrieve the product details
+        const ordersWithProducts = await Promise.all(ordersdata.map(async (order) => {
+            // Find the product details for each productId in the order
+            let productDetails = await product.findOne({ _id: order.productId });
+
+            if (productDetails) {
+                // Add product details to the order
+                return {
+                    productId: order.productId,
+                    quantity: order.quantity,
+                    totalPrice: order.totalPrice,
+                    productName: productDetails.name, // Example field, adjust according to your schema
+                    productPrice: productDetails.price, // Example field, adjust according to your schema
+                    productImage: productDetails.images[0].url, // Example field for product image, adjust according to your schema
+                };
+            } else {
+                // If no product found, return a simplified order object
+                return {
+                    productId: order.productId,
+                    quantity: order.quantity,
+                    totalPrice: order.totalPrice,
+                    productName: 'Product not found',
+                    productPrice: 0,
+                    productImage: '',
+                };
+            }
+        }));
+
+        // Respond with the orders including product details
+        let response = success_function({
+            success: true,
+            statusCode: 200,
+            message: "Retrieved orders successfully",
+            data: ordersWithProducts
+        });
+        return res.status(response.statusCode).send(response);
+
+    } catch (error) {
+        console.error("Error retrieving orders:", error);
+        let response = error_function({
+            success: false,
+            statusCode: 500,
+            message: "Internal server error",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+};
+
+exports.cancelOrder = async function(req, res) {
+    let id = req.params.id;
+    let p_id = req.params.p_id;
+
+    if (!id || !p_id) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "Please login to continue",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Check if the user exists
+    let check_user = await user.findOne({ _id: id });
+    if (!check_user) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "User not found",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Check if the order exists in the user's orders and match the product
+    let orderIndex = check_user.orders.findIndex(order => order.productId.toString() === p_id);
+    if (orderIndex === -1) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "Order not found",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Remove the order from the user's orders
+    check_user.orders.splice(orderIndex, 1);
+    
+    // Save the updated user object
+    await check_user.save();
+
+    let response = success_function({
+        success: true,
+        statusCode: 200,
+        message: "Order canceled successfully",
+    });
+    return res.status(response.statusCode).send(response);
 };
 
 

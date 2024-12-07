@@ -33,6 +33,8 @@ Router.delete('/removeCartData/:id',usercontroller.removeCartData)
 //place order
 
 Router.post('/placeOrders/:id',usercontroller.placeOrders)
+Router.get('/getorders/:id',usercontroller.getOrders);
+Router.delete('/cancelorder/:id/:p_id',usercontroller.cancelOrder);
 
 //wishlist
 Router.post('/addtowishlist/:id/:p_id',usercontroller.addToWishlist)
