@@ -20,6 +20,8 @@ import BuyerDashboard from './Components/Pages/buyerComponent/BuyerDashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import WishlistContainer from './Components/Pages/WishList/Wishlist';
+import PlaceOrder from './Components/Pages/PlaceOrder/PlaceOrder';
+
 
 
 function App() {
@@ -43,6 +45,7 @@ function App() {
           <Route path='/updateProduct/:id/:p_id' element={<UpdateProduct />} />
           <Route path='/buyerDashboard/:id/:p_id/:usertype' element={<BuyerDashboard />} />
           <Route path='/wishlist/:login/:id/:usertype' element={<WishlistContainer/>}/>
+          <Route path='/buynow/:login/:id/:usertype/:p_id/:price' element={<PlaceOrder/>}/>
 
           {/* Base route */}
           <Route path='/' element={<IndexComponent />} />

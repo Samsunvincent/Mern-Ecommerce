@@ -3,14 +3,14 @@ import FetchWishlist from "../../functionalities/FetchWishlist";
 import axios from "axios"; // Import axios for delete functionality
 import { useNavigate, useParams } from "react-router-dom";
 import Nav from "../../Nav/navOne";
+import AddToCart from "../../functionalities/addToCart";
 
 export default function WishlistContainer() {
     const { login, id, usertype } = useParams();
     const [wishlistProducts, setWishlistProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate()
-    const params = useParams()
+    const navigate = useNavigate();
 
     useEffect(() => {
         const getWishlist = async () => {
@@ -45,47 +45,50 @@ export default function WishlistContainer() {
     };
 
     const handleShopNow = useCallback(() => {
-        navigate(`/${login}/${id}/${usertype}`)
-    })
+        navigate(`/${login}/${id}/${usertype}`);
+    }, [login, id, usertype, navigate]);
 
-    const handleAddToCart = useCallback(async (p_id, price) => {
-        try {
-            const { id,login,usertype } = params;
-    
-            const data = {
-                userId: id,
-                productId: p_id,
-                price,
-            };
-    
-            const response = await AddToCart(data);
-    
-            console.log("API Response:", response); // Log the entire response
-    
-            // Check if the response has the success field
-            if (response && response.success) {
-                console.log("Item successfully added to cart:", response);
-                alert(`Item added to cart. Total Price: ${response.totalPrice}`);
-                navigate(`/getcartdata/${login}/${id}/${usertype}`)
-            } else {
-                console.error("Error adding item to cart:", response?.message || "Unknown error");
-                alert(`Error: ${response?.message || "Unknown error"}`);
+    const handleAddToCart = useCallback(
+        async (p_id, price) => {
+            try {
+                const data = {
+                    userId: id,
+                    productId: p_id,
+                    price,
+                };
+
+                const response = await AddToCart(data);
+
+                console.log("API Response:", response);
+
+                if (response && response.success) {
+                    alert(`Item added to cart. Total Price: ${response.totalPrice}`);
+                    navigate(`/getcartdata/${login}/${id}/${usertype}`);
+                } else {
+                    alert(`Error: ${response?.message || "Unknown error"}`);
+                }
+            } catch (error) {
+                console.error("Exception in handleAddToCart:", error);
+                alert("An unexpected error occurred while adding the item to the cart.");
             }
-        } catch (error) {
-            console.error("Exception in handleAddToCart:", error);
-            alert("An unexpected error occurred while adding the item to the cart.");
-        }
-    }, [params, navigate]);
+        },
+        [id, login, usertype, navigate]
+    );
 
     const handleBuyNow = (productId) => {
-        // Logic to handle buy now functionality (e.g., navigating to checkout)
-        console.log(`Product ${productId} bought`);
         navigate(`/checkout/${login}/${id}/${usertype}`);
     };
 
+    const handleSingleView = useCallback(
+        (p_id) => {
+            navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`);
+        },
+        [login, id, usertype, navigate]
+    );
+
     return (
         <>
-        <Nav/>
+            <Nav />
             <div className="min-h-screen bg-gray-100 p-6">
                 <div className="container mx-auto">
                     {loading && <p className="text-gray-600">Loading wishlist...</p>}
@@ -149,7 +152,10 @@ export default function WishlistContainer() {
 
                                     {/* Product Details */}
                                     <div className="w-2/3 p-4">
-                                        <h2 className="text-xl font-semibold text-gray-800">
+                                        <h2
+                                            className="text-xl font-semibold text-gray-800 cursor-pointer hover:text-blue-500"
+                                            onClick={() => handleSingleView(product._id)}
+                                        >
                                             {product.name}
                                         </h2>
                                         <p className="text-gray-600 mt-2 text-sm">{product.description}</p>
@@ -162,14 +168,9 @@ export default function WishlistContainer() {
 
                                         {/* Add to Cart and Buy Now buttons */}
                                         <div className="d-flex gap-5 pt-4">
-                                        <div>
                                             <button
-                                                onClick={(event) =>
-                                                    handleAddToCart(
-                                                        singleData.product._id,
-                                                        
-                                                        singleData.product.price
-                                                    )
+                                                onClick={() =>
+                                                    handleAddToCart(product._id, product.price)
                                                 }
                                                 className="p-3"
                                                 style={{
@@ -181,9 +182,8 @@ export default function WishlistContainer() {
                                             >
                                                 Add to cart
                                             </button>
-                                        </div>
-                                        <div>
                                             <button
+                                                onClick={() => handleBuyNow(product._id)}
                                                 className="p-3"
                                                 style={{
                                                     width: "224.16px",
@@ -195,7 +195,6 @@ export default function WishlistContainer() {
                                                 Buy now
                                             </button>
                                         </div>
-                                    </div>
                                     </div>
                                 </div>
                             ))}

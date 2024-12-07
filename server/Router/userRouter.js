@@ -19,6 +19,7 @@ Router.get('/getcategory',usercontroller.getCategory);
 Router.patch('/updateuser/:id',usercontroller.updateUserData)
 
 Router.patch('/addAddress/:id',usercontroller.addAddress);
+Router.get('/getAddress/:id',usercontroller.getAddress);
 
 //filter
 Router.post('/filter',usercontroller.filterCategory)

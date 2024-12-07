@@ -2,9 +2,17 @@ import axios from "axios";
 
 const getAllProducts = async function (id, usertype) {
     try {
-        const response = await axios.get(`http://localhost:3000/getProducts/${id}/${usertype}`, {
+        // Construct the URL dynamically based on the provided parameters
+        let url = "http://localhost:3000/getProducts";
+        if (usertype || id) {
+            url += "/";
+            if (id) url += `${id}`;
+            if (usertype) url += `/${usertype}`;
+        }
+
+        const response = await axios.get(url, {
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
             },
         });
 
@@ -20,7 +28,10 @@ const getAllProducts = async function (id, usertype) {
             return []; // Return an empty array in case of invalid data
         }
     } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error(
+            "Error fetching products:",
+            error.response ? error.response.data : error.message
+        );
         return []; // Return an empty array in case of an error
     }
 };

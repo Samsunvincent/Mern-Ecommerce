@@ -8,8 +8,9 @@ import AddToCart from "../../functionalities/addToCart";
 export default function SingleProductView() {
     const [singleData, setSingleData] = useState(null); // Store fetched product dataa
     const [enlargedImage, setEnlargedImage] = useState(""); // Store currently enlarged image
-    const params = useParams(); // Get params from the URL
+    const {id,login,usertype} = useParams(); // Get params from the URL
     const navigate = useNavigate(); // Hook for navigation
+    const params = useParams()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -63,6 +64,10 @@ export default function SingleProductView() {
             alert("An unexpected error occurred while adding the item to the cart.");
         }
     }, [params, navigate]);
+
+    const handleBuyNow = useCallback((p_id,price) =>{
+        navigate(`/buynow/${login}/${id}/${usertype}/${p_id}/${price}`)
+    })
     
     
     
@@ -71,7 +76,7 @@ export default function SingleProductView() {
         <>
             <div>
                 <Nav/>
-                <NavTwo/>
+             
                 <div className="container bg-white">
                     <div className="row">
                         {/* Image Thumbnails */}
@@ -178,6 +183,7 @@ export default function SingleProductView() {
                                                     backgroundColor: "rgb(251,100,27)",
                                                     border: "none",
                                                 }}
+                                                onClick={() => handleBuyNow(singleData.product._id,singleData.product.price)}
                                             >
                                                 Buy now
                                             </button>

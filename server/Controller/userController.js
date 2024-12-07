@@ -391,6 +391,49 @@ exports.addAddress = async function (req, res) {
     }
 };
 
+exports.getAddress = async function (req, res) {
+    let id = req.params.id;
+    if (!id) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "ID is required",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Check if the user exists
+    let check_user = await user.findOne({ _id: id });
+    if (!check_user) {
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "User not found",
+        });
+        return res.status(response.statusCode).send(response);
+    }
+
+    // Fetch the address from the user data
+    let address = check_user.Address; // This assumes Address is an array
+    if (!address || address.length === 0) { // Check if there are no addresses
+        let response = error_function({
+            success: false,
+            statusCode: 400,
+            message: "Address is not available",
+        });
+        return res.status(response.statusCode).send(response);
+    } else {
+        let response = success_function({
+            success: true,
+            statusCode: 200,
+            message: "Address retrieved successfully",
+            data: address,
+        });
+        return res.status(response.statusCode).send(response);
+    }
+};
+
+
 
 
 exports.filterCategory = async function(req, res) {
@@ -711,6 +754,13 @@ exports.addToWishlist = async function(req, res) {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // Check if the product exists in the products collection
+        let productExists = await product.findById(p_id);
+
+        if (!productExists) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
         // Check if the product is already in the wishlist
         let productIndex = userData.wishlist.findIndex(item => item.productId.toString() === p_id);
 
@@ -730,6 +780,7 @@ exports.addToWishlist = async function(req, res) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
 
 exports.getWishlist = async function(req, res) {
     try {
@@ -893,7 +944,7 @@ exports.deleteWishlist = async function (req, res) {
 
 
 
-
+//place order
 
 
 exports.placeOrders = async function (req, res) {
@@ -942,6 +993,16 @@ exports.placeOrders = async function (req, res) {
             return res.status(response.statusCode).send(response);
         }
 
+        // Check if the quantity requested is available in stock
+        if (quantity > matchProduct.stock) {
+            let response = error_function({
+                success: false,
+                statusCode: 400,
+                message: `Insufficient stock. Available stock is ${matchProduct.stock}`,
+            });
+            return res.status(response.statusCode).send(response);
+        }
+
         // If totalPrice is not provided, calculate it
         if (!totalPrice) {
             totalPrice = matchProduct.price * quantity; // Assuming 'price' field exists in product schema
@@ -963,8 +1024,12 @@ exports.placeOrders = async function (req, res) {
             });
         }
 
-        // Save the updated user data
+        // Reduce the stock of the product
+        matchProduct.stock -= quantity;
+
+        // Save the updated user and product data
         await matchId.save();
+        await matchProduct.save(); // Save the updated product stock
 
         // Respond with success
         let response = {

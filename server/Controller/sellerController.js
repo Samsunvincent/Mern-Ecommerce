@@ -61,8 +61,8 @@ exports.addProducts = async function (req, res) {
             category: body.category,
             brand: body.brand,
             stock: body.stock,
-            offer : body.offer,
-            discount : body.discount,
+            offer: body.offer,
+            discount: body.discount,
             images, // Use processed images
         });
 
@@ -92,39 +92,52 @@ exports.addProducts = async function (req, res) {
 
 
 
-
 exports.getProducts = async function (req, res) {
     try {
-        const userType = req.params.usertype.toLowerCase(); // Normalize usertype
-        const userId = req.params.id; // Seller ID from request
+        const userType = req.params.usertype ? req.params.usertype.toLowerCase() : null;
+        const userId = req.params.id || null;
 
         let productQuery = {};
 
-        // If userType is "seller", exclude products created by this seller
-        if (userType === "seller") {
-            productQuery = { sellerID: { $ne: userId } }; // Exclude this seller's products
+        // Fetch all products if no userType or userId is provided
+        if (!userType && !userId) {
+            productQuery = {};
+        } else if (userType === "seller" && userId) {
+            productQuery = { sellerID: { $ne: userId } }; // Exclude seller's products
         }
 
-        // Fetch products based on the query
+        
+
         let productData = await products.find(productQuery);
-        console.log("Filtered Products:", productData);
 
         if (!productData || productData.length === 0) {
-            let response = error_function({
-                success: false,
-                statusCode: 400,
-                message: "No products found",
-            });
-            return res.status(response.statusCode).send(response);
-        } else {
-            let response = success_function({
-                success: true,
-                statusCode: 200,
-                message: "Fetching successful",
-                data: productData,
-            });
-            return res.status(response.statusCode).send(response);
+            if (userType || userId) {
+                let response = error_function({
+                    success: false,
+                    statusCode: 400,
+                    message: "No products found for the given filter",
+                });
+                return res.status(response.statusCode).send(response);
+            }
         }
+
+        if (userId) {
+            const userData = await user.findById(userId);
+            let wishlistData = userData ? userData.wishlist : [];
+
+            productData = productData.map(product => {
+                let isWishlisted = wishlistData.some(wishlist => wishlist.productId.toString() === product._id.toString());
+                return { ...product.toObject(), isWishlisted };
+            });
+        }
+
+        let response = success_function({
+            success: true,
+            statusCode: 200,
+            message: "Fetching successful",
+            data: productData,
+        });
+        return res.status(response.statusCode).send(response);
     } catch (error) {
         console.error("Error:", error);
 
@@ -136,6 +149,9 @@ exports.getProducts = async function (req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
+
+
+
 
 
 exports.getAddedProducts = async function (req, res) {
@@ -232,7 +248,7 @@ exports.deleteAddedProducts = async function (req, res) {
     }
 };
 
-exports.updateAddedProducts = async function(req, res) {
+exports.updateAddedProducts = async function (req, res) {
     const sellerId = req.params.id;
     const p_id = req.params.p_id;
     const updatedData = req.body; // Assuming the updated data is passed in the request body
@@ -250,7 +266,7 @@ exports.updateAddedProducts = async function(req, res) {
     try {
         // Find the product by sellerId and productId
         const product = await products.findOne({ _id: p_id, sellerID: sellerId });
-        
+
         if (!product) {
             const response = error_function({
                 success: false,
@@ -281,7 +297,7 @@ exports.updateAddedProducts = async function(req, res) {
             success: true,
             statusCode: 200,
             message: "Product updated successfully.",
-            data : updatedData
+            data: updatedData
         });
         return res.status(response.statusCode).send(response);
     } catch (error) {
@@ -316,9 +332,9 @@ exports.getSingleViewProduct = async function (req, res) {
         let productMatch = await products.findOne({ _id: id })
             .populate('category')  // Populating category
             .populate('sellerID');  // Populating sellerID
-        
+
         console.log("productMatch", productMatch);
-        
+
         if (!productMatch) {
             let response = error_function({
                 success: false,

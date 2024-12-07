@@ -11,7 +11,9 @@ const Wishlist = async function(id, p_id) {
         },
       }
     );
-    console.log("response", response);
+    console.log("response from wishlist",response)
+    return response
+   
   } catch (error) {
     console.log("error", error);
   }

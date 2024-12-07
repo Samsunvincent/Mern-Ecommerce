@@ -3,12 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import Nav from "../../Nav/navOne";
 import NavTwo from "../../Nav/navTwo";
 import getAllProducts from "../../functionalities/getAllProducts";
-import Wishlist from "../../functionalities/WishlistRoute"; // Import your Wishlist function
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
 import FooterComponent from "../../Footer/footerComponent";
 import { toast } from "react-toastify"; // Import Toastify
+import Wishlist from "../../functionalities/WishlistRoute";
 
 const slides = [
   { imgSrc: "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/398ef080b952d576.jpg?q=20", alt: "Slide 1" },
@@ -18,119 +18,157 @@ const slides = [
   { imgSrc: "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/f7b74e32c435adb6.jpg?q=20", alt: "Slide 5" },
 ];
 
+const ProductCard = ({ product, allProducts, setAllProducts }) => {
+  const { login, id, usertype } = useParams();
+  const navigate = useNavigate();
+  const [isWishlisted, setIsWishlisted] = useState(product.isWishlisted);  // Initialize from product data
+
+  const handleHeartClick = useCallback(
+    async (e, p_id) => {
+      e.stopPropagation();
+
+      if (!id || !login) {
+        toast("Please login to continue", {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        return;
+      }
+
+      console.log("Current wishlist status:", isWishlisted); // Log current value of isWishlisted
+
+      try {
+        // Perform the wishlist operation
+        const response = await Wishlist(id, p_id);
+
+        // Log the full response to inspect its structure
+        console.log("API Response:", response);
+
+        // Check if the response contains the wishlist data
+        if (response.data && Array.isArray(response.data.wishlist)) {
+          // Update the product list based on the response
+          const updatedWishlist = response.data.wishlist;
+          setAllProducts((prevProducts) =>
+            prevProducts.map((product) => {
+              // Check if the product ID is in the wishlist
+              const isWishlisted = updatedWishlist.some(
+                (item) => item.productId === product._id
+              );
+              return {
+                ...product,
+                isWishlisted: isWishlisted,
+              };
+            })
+          );
+        } else {
+          console.error("Wishlist data is missing in the response:", response.data);
+          toast("Failed to update wishlist. Please try again.", {
+            position: "bottom-center",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }
+
+        const message = response.data.message || "Operation was successful";
+        toast(message, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } catch (error) {
+        console.error("Error updating wishlist:", error);
+        toast("Something went wrong. Please try again.", {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+    },
+    [id, login, isWishlisted, setAllProducts]
+  );
+
+  const handleSingleView = (p_id) => {
+    navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`);
+  };
+
+  return (
+    <div
+      className="card"
+      key={product._id}
+      onClick={() => handleSingleView(product._id)}
+    >
+      {/* Heart Icon */}
+      <img
+        src={
+          isWishlisted
+            ? "https://img.icons8.com/ios-filled/50/000000/like.png"  // Filled heart when in wishlist
+            : "https://img.icons8.com/ios/50/000000/like.png"        // Outline heart when not in wishlist
+        }
+        alt="Heart Icon"
+        onClick={(e) => handleHeartClick(e, product._id)}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          width: "24px",
+          height: "24px",
+          pointerEvents: "auto",
+          cursor: "pointer",
+        }}
+      />
+      {/* Product Image */}
+      <img
+        src={`http://localhost:3000/${product.images?.[0]?.url}`}
+        className="card-img-top w-[309.15px] h-[309.15px]"
+        alt={product.images?.[0]?.alt || product.name}
+      />
+      <div className="card-body">
+        <h5 className="card-title hover:text-sky-600">
+          {product.name.length > 40 ? product.name.slice(0, 40) + "..." : product.name}
+        </h5>
+        <p className="card-text" style={{ color: "red" }}>${product.price}</p>
+      </div>
+    </div>
+  );
+};
+
 export default function IndexComponent() {
   const { id, usertype, login } = useParams();
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [wishlist, setWishlist] = useState([]); // Track wishlist state
-  const navigate = useNavigate();
 
-  // Load the wishlist from localStorage only once when the component mounts
   useEffect(() => {
-    const storedWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-    setWishlist(storedWishlist);
-
     const fetchProducts = async () => {
+      setIsLoading(true);
       try {
-        const data = await getAllProducts(id, usertype);
-        if (Array.isArray(data)) {
-          setAllProducts(data);
-        } else {
-          console.error("Fetched data is not an array:", data);
-        }
-        setIsLoading(false);
+        const products = await getAllProducts(id, usertype);
+        setAllProducts(products);
       } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
         setIsLoading(false);
       }
     };
-
     fetchProducts();
   }, [id, usertype]);
 
-  // Save the wishlist to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  const ProductCard = ({ product }) => {
-    const imageUrl = product.images?.[0]?.url
-      ? product.images[0].url.replaceAll("\\", "/")
-      : "default-image-path.jpg";
-
-    const isInWishlist = wishlist.includes(product._id);
-
-    const handleWishlistToggle = async (productId, event) => {
-      event.stopPropagation(); // Prevent the click event from propagating to the parent div
-
-      // Check if the user is logged in (i.e., the 'login' parameter should be present)
-      if (!login) {
-        toast.error("Please log in to continue!"); // Show a Toastify error message
-        return; // Do nothing if not logged in
-      }
-
-      try {
-        // Make the API call to add/remove from wishlist
-        await Wishlist(id, productId); // Call your API function
-
-        // Toggle the wishlist state in UI
-        if (isInWishlist) {
-          // If product is in wishlist, remove it
-          const updatedWishlist = wishlist.filter((id) => id !== productId);
-          setWishlist(updatedWishlist); // Update UI
-          localStorage.setItem("wishlist", JSON.stringify(updatedWishlist)); // Update localStorage
-        } else {
-          // If product is not in wishlist, add it
-          const updatedWishlist = [...wishlist, productId];
-          setWishlist(updatedWishlist); // Update UI
-          localStorage.setItem("wishlist", JSON.stringify(updatedWishlist)); // Update localStorage
-        }
-      } catch (error) {
-        console.error("Error adding/removing product from wishlist:", error);
-      }
-    };
-
-    return (
-      <div className="card" key={product._id} onClick={() => handleSingleView(product._id)}>
-        <button
-          onClick={(e) => handleWishlistToggle(product._id, e)} // Pass the event to handleWishlistToggle
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "24px",
-            color: isInWishlist ? "red" : "gray", // Heart color based on wishlist status
-          }}
-        >
-          {isInWishlist ? "❤️" : "🤍"} {/* Change heart color */}
-        </button>
-
-        <img
-          src={`http://localhost:3000/${imageUrl}`}
-          className="card-img-top w-[309.15px] h-[309.15px]"
-          alt={product.images?.[0]?.alt || product.name}
-        />
-        <div className="card-body">
-          <h5 className="card-title hover:text-sky-600">
-            {product.name.length > 40 ? product.name.slice(0, 40) + "..." : product.name}
-          </h5>
-          <p className="card-text" style={{ color: "red" }}>${product.price}</p>
-        </div>
-      </div>
-    );
-  };
-
   const getNewArrivals = (products, n) => {
-    return products.slice(-n).reverse(); // Take the last N products and reverse them
+    return products.slice(-n).reverse();
   };
-
-  const handleSingleView = useCallback((p_id) => {
-    navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`);
-  });
 
   return (
     <>
@@ -139,7 +177,6 @@ export default function IndexComponent() {
 
       <div className="container-fluid">
         <div className="row">
-          {/* Main Content - Full Width */}
           <div className="col-12" id="mainContent">
             <div className="swiper-container">
               <Swiper
@@ -160,7 +197,6 @@ export default function IndexComponent() {
               </Swiper>
             </div>
 
-            {/* Featured Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="featured">
               FEATURED
             </div>
@@ -169,20 +205,15 @@ export default function IndexComponent() {
                 <div>Loading...</div>
               ) : filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
-                  <div key={product._id} onClick={() => handleSingleView(product._id)}>
-                    <ProductCard product={product} />
-                  </div>
+                  <ProductCard key={product._id} product={product} allProducts={allProducts} setAllProducts={setAllProducts} />
                 ))
               ) : (
                 allProducts.map((product) => (
-                  <div key={product._id} onClick={() => handleSingleView(product._id)}>
-                    <ProductCard product={product} />
-                  </div>
+                  <ProductCard key={product._id} product={product} allProducts={allProducts} setAllProducts={setAllProducts} />
                 ))
               )}
             </div>
 
-            {/* Budget Products Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="budget">
               BUDGET PRODUCTS
             </div>
@@ -190,22 +221,22 @@ export default function IndexComponent() {
               {allProducts
                 .filter((product) => product.price < 1000)
                 .map((product) => (
-                  <ProductCard key={product._id} product={product} />
+                  <ProductCard key={product._id} product={product} allProducts={allProducts} setAllProducts={setAllProducts} />
                 ))}
             </div>
 
-            {/* New Arrivals Section */}
             <div className="text-center p-5 fs-2 fw-bolder" id="newarrivals">
               NEW ARRIVALS
             </div>
             <div className="product-card container">
               {getNewArrivals(allProducts, 5).map((product) => (
-                <ProductCard key={product._id} product={product} />
+                <ProductCard key={product._id} product={product} allProducts={allProducts} setAllProducts={setAllProducts} />
               ))}
             </div>
           </div>
         </div>
       </div>
+
       <FooterComponent />
     </>
   );
