@@ -28,7 +28,7 @@ Router.post('/filter',usercontroller.filterCategory)
 //Cart
 Router.post('/addtocart',usercontroller.addToCart);
 Router.get('/getCartData/:id',usercontroller.getCartData)
-Router.delete('/removeCartData/:id',usercontroller.removeCartData)
+Router.delete('/removeCartData/:id/:p_id',usercontroller.removeCartData)
 
 //place order
 

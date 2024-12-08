@@ -663,81 +663,64 @@ exports.getCartData = async function (req, res) {
 };
 
 
-
 exports.removeCartData = async function (req, res) {
+    const userId = req.params.id;
+    const productId = req.params.p_id;
+
+    // Validate user ID and product ID
+    if (!userId || !productId) {
+        const response = {
+            success: false,
+            statusCode: 400,
+            message: "User ID and Product ID are required to remove an item from the cart.",
+        };
+        return res.status(response.statusCode).send(response);
+    }
+
     try {
-        const { userId } = req.body; // User ID is passed in the request body
-        const productId = req.params.id; // Product ID is passed as a URL parameter
+        // Find the cart for the user
+        const userCart = await Cart.findOne({ userId });
 
-        // Validate input
-        if (!userId || !productId) {
-            let response = error_function({
-                success: false,
-                statusCode: 400,
-                message: "User ID or Product ID is missing",
-            });
-            return res.status(response.statusCode).send(response);
-        }
-
-        // Validate MongoDB ObjectIds
-        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(productId)) {
-            let response = error_function({
-                success: false,
-                statusCode: 400,
-                message: "Invalid User ID or Product ID",
-            });
-            return res.status(response.statusCode).send(response);
-        }
-
-        // Find and update the cart by removing the product from the items array
-        const updatedCart = await Cart.findOneAndUpdate(
-            { userId }, // Match the user's cart
-            { $pull: { items: { productId } } }, // Remove the product from items array
-            { new: true } // Return the updated document
-        );
-
-        // If no cart is found or the product was not removed
-        if (!updatedCart) {
-            let response = error_function({
+        if (!userCart) {
+            const response = {
                 success: false,
                 statusCode: 404,
-                message: "Cart not found for the given user",
-            });
+                message: "Cart not found for this user.",
+            };
             return res.status(response.statusCode).send(response);
         }
 
-        // Check if the product was successfully removed
-        const wasRemoved = !updatedCart.items.some(item => item.productId.toString() === productId);
-        if (!wasRemoved) {
-            let response = error_function({
+        // Find and remove the product from the cart
+        const updatedItems = userCart.items.filter(item => item.productId.toString() !== productId);
+
+        if (updatedItems.length === userCart.items.length) {
+            const response = {
                 success: false,
                 statusCode: 404,
-                message: "Product not found in the cart",
-            });
+                message: "Product not found in the cart.",
+            };
             return res.status(response.statusCode).send(response);
         }
 
-        // Handle empty cart: Optionally delete the cart if no items remain
-        if (updatedCart.items.length === 0) {
-            await Cart.deleteOne({ userId });
-        }
+        // Update the cart items and recalculate the total price
+        userCart.items = updatedItems;
+        userCart.totalPrice = updatedItems.reduce((total, item) => total + item.price * item.quantity, 0);
+        await userCart.save();
 
-        // Success response
-        let response = success_function({
+        const response = {
             success: true,
             statusCode: 200,
-            message: "Product removed successfully",
-            data: updatedCart,
-        });
+            message: "Product removed from the cart successfully.",
+            cart: userCart,
+        };
         return res.status(response.statusCode).send(response);
-
     } catch (error) {
-        console.error(`Error removing product ${req.params.id} for user ${req.body.userId}:`, error);
-        let response = error_function({
+        const response = {
             success: false,
             statusCode: 500,
-            message: "Internal Server Error",
-        });
+            message: "An error occurred while removing the product from the cart.",
+            error: error.message,
+        };
         return res.status(response.statusCode).send(response);
     }
 };

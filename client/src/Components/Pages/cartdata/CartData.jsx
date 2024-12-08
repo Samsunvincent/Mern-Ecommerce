@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import GetCartData from "../../functionalities/FetchCart";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import RemoveCartData from "../../functionalities/RemoveCartRoute";
 import FetchAddress from "../../functionalities/getAddress";
 import Buynow from "../../functionalities/placeOrderRoute";
@@ -8,81 +10,125 @@ import Nav from "../../Nav/navOne";
 
 export default function CartData() {
     const params = useParams();
-    const id = params.id;
-    const [cartData, setCartData] = useState(null); // Initialize as null
-    const [totalAmount, setTotalAmount] = useState(0); // State for total amount
+    const [cartData, setCartData] = useState([]);
+    const [totalAmount, setTotalAmount] = useState(0);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showPrompt, setShowPrompt] = useState(false);
+    const navigate = useNavigate(); // Corrected navigate usage
+    const { login, id, usertype } = useParams();
 
+    // Fetch cart data
     useEffect(() => {
-        const fetchedData = async () => {
+        const fetchCartData = async () => {
             try {
-                const response = await GetCartData(id); // Fetch cart data
-                console.log("RESPONSE", response); // Log the response
-                setCartData(response); // Set the cart data state
-                calculateTotalAmount(response); // Calculate total amount
+                const response = await GetCartData(id);
+                console.log("RESPONSE", response);
+                setCartData(response);
+                calculateTotalAmount(response);
             } catch (error) {
-                console.error("Error fetching cart data:", error); // Handle error
+                console.error("Error fetching cart data:", error);
+                toast.error("Failed to fetch cart data.");
             }
         };
 
-        fetchedData(); // Call the async function
+        fetchCartData();
     }, [id]);
 
+    // Fetch addresses
     useEffect(() => {
-        const getAddresses = async () => {
-            const fetchedAddresses = await FetchAddress(id);
-            if (fetchedAddresses && fetchedAddresses.length > 0) {
-                setAddresses(fetchedAddresses);
-                setSelectedAddress(fetchedAddresses[0]); // Default to the first address
+        const fetchAddresses = async () => {
+            try {
+                const fetchedAddresses = await FetchAddress(id);
+                if (fetchedAddresses && fetchedAddresses.length > 0) {
+                    setAddresses(fetchedAddresses);
+                    setSelectedAddress(fetchedAddresses[0]);
+                } else {
+                    toast.warning("No addresses available.");
+                }
+            } catch (error) {
+                console.error("Error fetching addresses:", error);
+                toast.error("Failed to fetch addresses.");
             }
         };
-        getAddresses();
+
+        fetchAddresses();
     }, [id]);
 
+    // Calculate total cart amount
+    const calculateTotalAmount = (cartItems) => {
+        const total = cartItems.reduce(
+            (acc, item) => acc + item.price * item.quantity,
+            0
+        );
+        setTotalAmount(total);
+    };
+
+    // Handle address selection
     const handleAddressChange = (address) => {
         setSelectedAddress(address);
-        setShowPrompt(false); // Close the prompt
+        setShowPrompt(false);
     };
 
-    const calculateTotalAmount = (cartItems) => {
-        const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0); // Multiply by quantity
-        setTotalAmount(total); // Set the total amount for cart
-    };
-
+    // Handle product removal from cart
     const handleRemoveCartData = async (productId) => {
-        console.log("Removing product with ID:", productId);
-        const data = { id: id };
-
-        let deletedata = await RemoveCartData(productId, data);
-        console.log("delete data", deletedata);
-    };
-
-    // Collect all product IDs, quantities, and prices to send to Buynow
-    const handleProceedToPayment = async () => {
-        // Collect all product IDs, quantities, and prices to send to Buynow
-        const productsToOrder = cartData.map((item) => ({
-            productId: item._id,   // Product ID
-            quantity: item.quantity, // Quantity
-            totalPrice: item.price * item * 1 // Total price for the product
-        }));
-
         try {
-            // Call Buynow function with products to order
-            const response = await Buynow({ products: productsToOrder }, id);  // Send products as a body object
-            console.log("Order placed successfully:", response);
-            // Handle success (e.g., redirect to confirmation page or show success message)
+            const removedDataMessage = await RemoveCartData(id, productId);
+            if (removedDataMessage.success) {
+                toast.success(removedDataMessage.message);
+                const updatedCart = await GetCartData(id);
+                setCartData(updatedCart);
+                calculateTotalAmount(updatedCart);
+            } else {
+                toast.error("Failed to remove product.");
+            }
         } catch (error) {
-            console.error("Error placing order:", error);
-            // Handle error (e.g., show an error message to the user)
+            console.error("Error removing product:", error);
+            toast.error("An error occurred while removing the product.");
         }
     };
 
-    return (
+    // Handle proceeding to payment
+    const handleProceedToPayment = async () => {
+        if (!cartData || cartData.length === 0) {
+            toast.error("Your cart is empty.");
+            return;
+        }
 
+        if (!selectedAddress) {
+            toast.error("Please select a delivery address.");
+            return;
+        }
+
+        const productsToOrder = cartData.map((item) => ({
+            productId: item._id,
+            quantity: item.quantity,
+            totalPrice: item.price * item.quantity,
+        }));
+
+        try {
+            const response = await Buynow(
+                { products: productsToOrder, addressId: selectedAddress._id },
+                id
+            );
+            console.log("Order placed successfully:", response);
+            toast.success("Order placed successfully!");
+            setCartData([]); // Clear cart after order
+            setTotalAmount(0);
+        } catch (error) {
+            console.error("Error placing order:", error);
+            toast.error("Failed to place order. Please try again.");
+        }
+    };
+
+    // Handle navigating to single product view
+    const handleSingleView = useCallback((p_id) => {
+        navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`); // Pass the productId
+    }, [navigate, login, id, usertype]);
+
+    return (
         <>
-        <Nav/>
+            <Nav />
             <div className="flex md:container md:mx-auto">
                 {/* Left Side: Cart Items and Address */}
                 <div className="p-3 w-3/4 space-y-4">
@@ -124,26 +170,25 @@ export default function CartData() {
                                     <li
                                         key={index}
                                         className="flex items-center justify-between border-b pb-4"
+                                        onClick={() => handleSingleView(item._id)}
+                                        style={{ cursor: "pointer" }} // Corrected the style object
                                     >
-                                        {/* Left Side: Product Image */}
                                         <div className="flex-shrink-0 w-16 h-16">
                                             <img
-                                                src={`http://localhost:3000/${item.images[0].url}`} // Replace with the correct image field
+                                                src={`http://localhost:3000/${item.images[0].url}`}
                                                 alt={item.name}
                                                 className="w-full h-full object-cover rounded"
                                             />
                                         </div>
-
-                                        {/* Right Side: Product Details */}
                                         <div className="ml-4 flex-1">
                                             <p className="font-semibold">{item.name}</p>
-                                            <p className="text-gray-600 text-sm">Price: ₹{item.price}</p>
+                                            <p className="text-gray-600 text-sm">
+                                                Price: ₹{item.price}
+                                            </p>
                                             <p className="text-gray-500 text-xs">
                                                 Quantity: {item.quantity || 1}
                                             </p>
                                         </div>
-
-                                        {/* Remove Button */}
                                         <button
                                             className="text-red-600 underline text-sm"
                                             onClick={() => handleRemoveCartData(item._id)}
@@ -170,11 +215,11 @@ export default function CartData() {
                             </div>
                             <div className="flex justify-between">
                                 <p>Shipping:</p>
-                                <p className="text-green-500">₹free</p> {/* Replace with dynamic value if applicable */}
+                                <p className="text-green-500">₹free</p>
                             </div>
                             <div className="flex justify-between font-semibold">
                                 <p>Total:</p>
-                                <p>₹{totalAmount + 50}</p> {/* Adjust based on shipping */}
+                                <p>₹{totalAmount}</p>
                             </div>
                         </div>
                         <button
@@ -201,7 +246,10 @@ export default function CartData() {
                                                     name="address"
                                                     value={address._id}
                                                     className="mr-2"
-                                                    checked={selectedAddress && selectedAddress._id === address._id}
+                                                    checked={
+                                                        selectedAddress &&
+                                                        selectedAddress._id === address._id
+                                                    }
                                                     onChange={() => handleAddressChange(address)}
                                                 />
                                                 {`${address.name}, ${address.street}, ${address.city}, ${address.state}, ${address.country} - ${address.pincode}`}
@@ -222,6 +270,7 @@ export default function CartData() {
                     </div>
                 )}
             </div>
+            <ToastContainer position="bottom-center" autoClose={2000} />
         </>
     );
 }

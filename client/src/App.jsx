@@ -7,7 +7,7 @@ import Signin from './Components/Pages/signinpage/Signin';
 import './Components/Pages/signinpage/Signin.css';
 import Login from './Components/Pages/loginComponent/Login';
 import './Components/Pages/loginComponent/Login.css';
-import Admin from './Components/Pages/adminComponent/Admin';
+import AdminDashBoard from './Components/Pages/Admin/AdminDashboard';
 import Seller from './Components/Pages/sellerComponent/SellerComponent';
 import AddProducts from './Components/Pages/addProductsComponent/addProducts';
 import SellerDashboard from './Components/Pages/sellerComponent/sellerDashboard';
@@ -22,6 +22,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import WishlistContainer from './Components/Pages/WishList/Wishlist';
 import PlaceOrder from './Components/Pages/PlaceOrder/PlaceOrder';
 import OrderData from './Components/Pages/PlaceOrder/OrderData';
+import Buyer from './Components/Pages/Admin/Buyer';
+import Sellers from './Components/Pages/Admin/Sellers';
+import BuyerDetails from './Components/Pages/Admin/BuyerDetails';
+import SellerProfile from './Components/Pages/Admin/SellerDetails';
 
 
 
@@ -36,7 +40,7 @@ function App() {
           {/* Static routes */}
           <Route path='/signin' element={<Signin />} />
           <Route path='/Login' element={<Login />} />
-          <Route path='/Admin/:login/:id/:usertype' element={<Admin />} />
+          <Route path='/Admin/:login/:id/:usertype' element={<AdminDashBoard />} />
           <Route path='/seller/:login/:id/:usertype' element={<Seller />} />
           <Route path='/addProducts/:login/:id/:usertype' element={<AddProducts />} />
           <Route path='/sellerDashboard/:login/:id/:usertype' element={<SellerDashboard />} />
@@ -48,6 +52,10 @@ function App() {
           <Route path='/wishlist/:login/:id/:usertype' element={<WishlistContainer/>}/>
           <Route path='/buynow/:login/:id/:usertype/:p_id/:price' element={<PlaceOrder/>}/>
           <Route path='/orderdata/:login/:id/:usertype' element={<OrderData/>}/>
+          <Route path='/Buyer/:login/:id/:usertype' element={<Buyer/>}/>
+          <Route path='/Sellers/:login/:id/:usertype' element={<Sellers/>}/>
+          <Route path='/Buyerdetails/:login/:id/:usertype/:b_id' element={<BuyerDetails/>}/>
+          <Route path='/SellerDetails/:login/:id/:usertype/:s_id' element={<SellerProfile/>}/>
 
           {/* Base route */}
           <Route path='/' element={<IndexComponent />} />

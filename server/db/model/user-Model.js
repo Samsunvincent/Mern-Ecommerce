@@ -1,54 +1,58 @@
 const mongoose = require('mongoose');
 
 let user_Schema = new mongoose.Schema({
-    name : {
-        type : String
+    name: {
+        type: String
     },
-    email : {
-        type : String
+    email: {
+        type: String
     },
-    password : {
-        type : String
+    password: {
+        type: String
     },
-    phone_number : {
-        type : String
+    phone_number: {
+        type: String
     },
- Address: [
+    Address: [
         {
-            name : {type : String},
+            name: { type: String },
             street: { type: String },
             city: { type: String },
             state: { type: String },
             country: { type: String },
-            pincode: { type: String },
-        },
+            pincode: { type: String }
+        }
     ],
-    userType : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "userType"
+    userType: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "userType"
     },
-    wishlist : [
+    wishlist: [
         {
-            productId : {
-                type : String
+            productId: {
+                type: String
             }
         }
     ],
     orders: [
         {
             productId: {
-                type: String, 
+                type: String
             },
             quantity: {
-                type: Number, 
-                default: 1,
+                type: Number,
+                default: 1
             },
             totalPrice: {
-                type: Number, 
+                type: Number
             },
-        },
-    ],
+            createdAt: {
+                type: Date,
+                default: Date.now  // Sets the current date and time when an order is created
+            }
+        }
+    ]
 })
 
-let user = mongoose.model('user_data',user_Schema);
-module.exports = user
+let user = mongoose.model('user_data', user_Schema);
+module.exports = user;

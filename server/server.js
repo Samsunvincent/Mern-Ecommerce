@@ -11,6 +11,7 @@ const cors = require('cors')
 const router = require('./Router/userRouter')
 const authRouter = require('../server/Router/authRouter')
 const productRouter = require('./Router/sellerRouter')
+const adminRouter = require('./Router/AdminRouter')
 
 app.use(cors());
 app.use(express.json({limit : "500mb"}));
@@ -25,6 +26,7 @@ if (!fs.existsSync(uploadDir)) {
 app.use(router)
 app.use(authRouter)
 app.use(productRouter)
+app.use(adminRouter)
 
 
 app.listen(process.env.PORT,()=>{

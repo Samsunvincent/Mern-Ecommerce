@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 let user = require('../db/model/user-Model')
 const dotenv = require('dotenv');
 dotenv.config();
+let adminData = require('../db/model/admin')
 
 const control_data = require('../Controller/contol-Data.json');
 
@@ -54,8 +55,9 @@ exports.accessControl = async function (access_types,req,res,next){
                     }
                     else{
                         console.log("decoded",decoded);
+                     
 
-                        let user_data = await user.findOne({_id : decoded.id}).populate("userType");
+                        let user_data = await adminData.findOne({_id : decoded.id}).populate("userType");
                         console.log("user from access control",user_data);
 
                         
