@@ -9,9 +9,13 @@ export default function SellerProfile() {
     const [cartedProducts, setCartedProducts] = useState([]);
     const [orderedProducts, setOrderedProducts] = useState([]);
     const [wishlistedProducts, setWishlistedProducts] = useState([]);
+    const [addedProducts, setAddedProducts] = useState([]);
+
     const [showCart, setShowCart] = useState(false);
     const [showWishlist, setShowWishlist] = useState(false);
     const [showOrders, setShowOrders] = useState(false);
+    const [showAddedProducts, setShowAddedProducts] = useState(false);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -21,6 +25,7 @@ export default function SellerProfile() {
             setSellerDetails(data.SellerDetails);
             setOrderedProducts(data.orderedProducts);
             setWishlistedProducts(data.wishlistedProducts);
+            setAddedProducts(data.addedProducts); // Fixed typo
         };
         fetchSellerData();
     }, [s_id, token]);
@@ -29,33 +34,44 @@ export default function SellerProfile() {
         setShowCart(true);
         setShowWishlist(false);
         setShowOrders(false);
+        setShowAddedProducts(false);
     }, []);
 
     const handleWishlistClick = useCallback(() => {
         setShowCart(false);
         setShowWishlist(true);
         setShowOrders(false);
+        setShowAddedProducts(false);
     }, []);
 
     const handleOrdersClick = useCallback(() => {
         setShowCart(false);
         setShowWishlist(false);
         setShowOrders(true);
+        setShowAddedProducts(false);
+    }, []);
+
+    const handleAddedProductsClick = useCallback(() => {
+        setShowCart(false);
+        setShowWishlist(false);
+        setShowOrders(false);
+        setShowAddedProducts(true);
     }, []);
 
     const handleDashboard = useCallback(() => {
         navigate(`/Admin/${login}/${id}/${usertype}`);
     }, [login, id, usertype, navigate]);
 
-    const handleDashBoard = useCallback(() => {
-        navigate(`/Admin/${login}/${id}/${usertype}`)
-    })
-    
-    const handleSeller = useCallback(() =>{
-        navigate(`/Sellers/${login}/${id}/${usertype}`)
-    })
-    const handleBuyer = useCallback(() =>{
-        navigate(`/Buyer/${login}/${id}/${usertype}`)
+    const handleSeller = useCallback(() => {
+        navigate(`/Sellers/${login}/${id}/${usertype}`);
+    });
+
+    const handleBuyer = useCallback(() => {
+        navigate(`/Buyer/${login}/${id}/${usertype}`);
+    });
+
+    const handleProductsClick = useCallback(() =>{
+        navigate(`/AllProducts/${login}/${id}/${usertype}`)
     })
 
     return (
@@ -80,12 +96,12 @@ export default function SellerProfile() {
                             </a>
                         </li>
                         <li>
-                            <a href="" onClick={handleDashboard} className="hover:text-gray-300">
+                            <a href="" className="hover:text-gray-300">
                                 Orders
                             </a>
                         </li>
                         <li>
-                            <a href="" onClick={handleDashboard} className="hover:text-gray-300">
+                            <a href="" onClick={handleProductsClick} className="hover:text-gray-300">
                                 Products
                             </a>
                         </li>
@@ -111,7 +127,6 @@ export default function SellerProfile() {
                             <span className="font-bold">Phone:</span>
                             <span>{sellerDetails.phone_number}</span>
                         </div>
-                        {/* Additional seller details can go here */}
                     </div>
 
                     <div className="mt-6">
@@ -133,6 +148,12 @@ export default function SellerProfile() {
                         >
                             Orders ({orderedProducts.length})
                         </button>
+                        <button
+                            onClick={handleAddedProductsClick}
+                            className="border-4 border-t-indigo-700 border-l-indigo-700 py-2 px-4 rounded-md hover:bg-blue-700 hover:text-white ml-4"
+                        >
+                            Added Products ({addedProducts.length})
+                        </button>
                     </div>
                 </div>
 
@@ -146,6 +167,10 @@ export default function SellerProfile() {
 
                 {showOrders && (
                     <ProductList title="Ordered Products" products={orderedProducts} />
+                )}
+
+                {showAddedProducts && (
+                    <ProductList title="Added Products" products={addedProducts} />
                 )}
             </div>
         </div>

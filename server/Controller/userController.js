@@ -9,6 +9,8 @@ const addtocartmodel = require('../db/model/addtocart-Model');
 const Cart = require('../db/model/addtocart-Model');
 
 const mongoose = require('mongoose');
+let orderTemplate = require('../utils/email-templates/Order-template').order
+const { sendEmail } = require('../utils/send-email');
 
 
 
@@ -134,29 +136,29 @@ exports.signin = async function (req, res) {
     }
 };
 
-exports.getUserTypes = async function(req,res){
+exports.getUserTypes = async function (req, res) {
     try {
         let selectUserTypes = await userType.find();
-       
 
-        if(selectUserTypes){
+
+        if (selectUserTypes) {
             let response = success_function({
-                success : true,
-                statusCode : 200,
-                message : "successfully fetched the userTypes",
-                data : selectUserTypes
+                success: true,
+                statusCode: 200,
+                message: "successfully fetched the userTypes",
+                data: selectUserTypes
             });
             res.status(response.statusCode).send(response);
             return;
         }
     } catch (error) {
-        console.log('error',error);
+        console.log('error', error);
 
         let response = error_function({
-            success : false,
-            statusCode : 400,
-            message : "userType fetching failed",
-            
+            success: false,
+            statusCode: 400,
+            message: "userType fetching failed",
+
         });
         res.status(response.statusCode).send(response)
         return;
@@ -164,7 +166,7 @@ exports.getUserTypes = async function(req,res){
 
 }
 
-exports.getAllUsers = async function(req, res) {
+exports.getAllUsers = async function (req, res) {
     try {
         // Fetch all users from the database
         let users = await user.find();
@@ -192,11 +194,11 @@ exports.getAllUsers = async function(req, res) {
             data: users
         };
         res.status(response.statusCode).send(response);
-        
+
     } catch (error) {
         // Log the error
         console.log("Error fetching users:", error);
-        
+
         // Send an error response
         let response = error_function({
             success: false,
@@ -207,129 +209,129 @@ exports.getAllUsers = async function(req, res) {
     }
 };
 
-exports.getUser = async function(req,res){
+exports.getUser = async function (req, res) {
     try {
         let id = req.params.id;
-    console.log("id from single user",id);
+        console.log("id from single user", id);
 
-    if(!id){
-        let response = error_function({
-            success : false,
-            statusCode : 400,
-            messsage : "something went wrong"
-        });
-        res.status(response.statusCode).send(response);
-        return;
-    }else{
-        let singleUser = await user.findOne({_id : id});
-        console.log("singleUser",singleUser);
-        
-        if(!singleUser){
+        if (!id) {
             let response = error_function({
-                success : false,
-                statusCode : 400,
-                message : "User not found",
-
+                success: false,
+                statusCode: 400,
+                messsage: "something went wrong"
             });
             res.status(response.statusCode).send(response);
             return;
-        }else{
-            let response = success_function({
-                success : true,
-                statusCode : 200,
-                message : "User found",
-                data : singleUser
-            });
-            res.status(response.statusCode).send(response);
-            return
+        } else {
+            let singleUser = await user.findOne({ _id: id });
+            console.log("singleUser", singleUser);
+
+            if (!singleUser) {
+                let response = error_function({
+                    success: false,
+                    statusCode: 400,
+                    message: "User not found",
+
+                });
+                res.status(response.statusCode).send(response);
+                return;
+            } else {
+                let response = success_function({
+                    success: true,
+                    statusCode: 200,
+                    message: "User found",
+                    data: singleUser
+                });
+                res.status(response.statusCode).send(response);
+                return
+            }
         }
-    }
     } catch (error) {
-        console.log('error',error);
+        console.log('error', error);
 
         let response = error_function({
-            success : false,
-            statusCode : 400,
-            message : "Something went wrong, try again"
+            success: false,
+            statusCode: 400,
+            message: "Something went wrong, try again"
         });
         res.status(response.statusCode).send(response);
         return;
     }
 }
 
-exports.updateUserData = async function(req,res){
+exports.updateUserData = async function (req, res) {
     let body = req.body;
-    console.log("body",body);
+    console.log("body", body);
 
     let userId = req.params.id;
-    console.log("userId",userId);
+    console.log("userId", userId);
 
-    if(!body){
+    if (!body) {
         let response = error_function({
-            success : false,
-            statusCode : 400,
-            message : "body is not available",
+            success: false,
+            statusCode: 400,
+            message: "body is not available",
         });
         return res.status(response.statusCode).send(response);
 
-    }else{
-        let updatingData = await user.findOne({ _id : userId});
-        console.log("updating Data",updatingData);
+    } else {
+        let updatingData = await user.findOne({ _id: userId });
+        console.log("updating Data", updatingData);
 
-        if(!updatingData){
+        if (!updatingData) {
             let response = error_function({
-                success : false,
-                statusCode : 400,
-                message : "user not found",
+                success: false,
+                statusCode: 400,
+                message: "user not found",
 
             });
             return res.status(response.statusCode).send(response);
-        }else{
-            let updatedData = await user.updateOne({_id : userId},{$set : {name:body.name, email : body.email, phone : body.phone_number}});
-            console.log("updated data",updatedData);
+        } else {
+            let updatedData = await user.updateOne({ _id: userId }, { $set: { name: body.name, email: body.email, phone: body.phone_number } });
+            console.log("updated data", updatedData);
 
-            if(updatedData){
-                let response  = success_function({
-                    success : true,
-                    statusCode : 200,
-                    message : "user updated succesfully",
-                    data : updatedData
+            if (updatedData) {
+                let response = success_function({
+                    success: true,
+                    statusCode: 200,
+                    message: "user updated succesfully",
+                    data: updatedData
                 });
                 return res.status(response.statusCode).send(response);
 
-            }else{
+            } else {
                 let response = error_function({
-                    success : false,
-                    statusCode : 400,
-                    message : "user updation failed",
+                    success: false,
+                    statusCode: 400,
+                    message: "user updation failed",
                 });
                 return res.status(response.statusCode).send(response);
             }
-           
+
         }
     }
 }
 
-exports.getCategory = async function(req,res){
+exports.getCategory = async function (req, res) {
     try {
         let categories = await category.find();
 
-        if(categories){
+        if (categories) {
             let response = success_function({
-                success : true,
-                statusCode : 200,
-                message : null,
-                data : categories
+                success: true,
+                statusCode: 200,
+                message: null,
+                data: categories
             });
             res.status(response.statusCode).send(response);
             return;
         }
     } catch (error) {
-        console.log("error",error);
+        console.log("error", error);
         let response = error_function({
-            success : false,
-            statusCode : 400,
-            message : "something went wrong try again"
+            success: false,
+            statusCode: 400,
+            message: "something went wrong try again"
         });
         res.status(response.statusCode).send(response);
     }
@@ -338,8 +340,8 @@ exports.getCategory = async function(req,res){
 exports.addAddress = async function (req, res) {
     let id = req.params.id; // User ID from request parameters
     let newAddress = req.body.Address;
-    console.log("new address",newAddress) 
-    console.log('req.body',req.body);// New address from the request body
+    console.log("new address", newAddress)
+    console.log('req.body', req.body);// New address from the request body
 
     // Check if the Address field is addt
     if (!newAddress) {
@@ -369,7 +371,7 @@ exports.addAddress = async function (req, res) {
                 message: "Address added successfully",
                 data: updateData,
             });
-           return res.status(response.statusCode).send(response);
+            return res.status(response.statusCode).send(response);
         } else {
             let response = error_function({
                 success: false,
@@ -436,7 +438,7 @@ exports.getAddress = async function (req, res) {
 
 
 
-exports.filterCategory = async function(req, res) {
+exports.filterCategory = async function (req, res) {
     // Validate the category in the request body
     const query_category = req.body.category;
     if (!query_category) {
@@ -725,7 +727,7 @@ exports.removeCartData = async function (req, res) {
     }
 };
 
-exports.addToWishlist = async function(req, res) {
+exports.addToWishlist = async function (req, res) {
     let userId = req.params.id;  // Get user ID from the URL params
     let p_id = req.params.p_id;  // Get product ID from the URL params
 
@@ -765,7 +767,7 @@ exports.addToWishlist = async function(req, res) {
 };
 
 
-exports.getWishlist = async function(req, res) {
+exports.getWishlist = async function (req, res) {
     try {
         const id = req.params.id;
 
@@ -862,7 +864,7 @@ exports.getWishlist = async function(req, res) {
 
 exports.deleteWishlist = async function (req, res) {
     try {
-        const p_id  = req.params.p_id;
+        const p_id = req.params.p_id;
 
         // Validate product ID
         if (!p_id) {
@@ -877,6 +879,7 @@ exports.deleteWishlist = async function (req, res) {
         // Validate user existence in the database
         const userId = req.params.id; // Assuming `req.user` contains the authenticated user's details
         const userRecord = await user.findById(userId);
+
 
         if (!userRecord) {
             const response = error_function({
@@ -965,6 +968,12 @@ exports.placeOrders = async function (req, res) {
             return res.status(response.statusCode).send(response);
         }
 
+        let email = matchId.email;
+        console.log("email", email)
+
+        let name = matchId.name;
+        console.log("name", name)
+
         // Iterate over the products array to validate and process each product
         let orderSummary = [];
         for (const { productId, quantity = 1, totalPrice } of products) {
@@ -1025,13 +1034,22 @@ exports.placeOrders = async function (req, res) {
             await matchProduct.save();
 
             // Add to order summary
+            // Add to order summary
             orderSummary.push({
                 productId,
+                productName: matchProduct.name,
+                productPrice: matchProduct.price,
                 quantity: existingOrder ? existingOrder.quantity : quantity,
                 totalPrice: existingOrder
                     ? existingOrder.totalPrice
                     : calculatedTotalPrice,
             });
+
+        }
+
+        if (orderSummary) {
+            let placeOrderEmalTemplate = await orderTemplate(name, orderSummary);
+            await sendEmail(email, "orderConfirmation", placeOrderEmalTemplate)
         }
 
         // Save the updated user data
@@ -1057,7 +1075,7 @@ exports.placeOrders = async function (req, res) {
     }
 };
 
-exports.getOrders = async function(req, res) {
+exports.getOrders = async function (req, res) {
     let id = req.params.id;
 
     // Check if user ID is provided
@@ -1141,7 +1159,7 @@ exports.getOrders = async function(req, res) {
     }
 };
 
-exports.cancelOrder = async function(req, res) {
+exports.cancelOrder = async function (req, res) {
     let id = req.params.id;
     let p_id = req.params.p_id;
 
@@ -1178,7 +1196,7 @@ exports.cancelOrder = async function(req, res) {
 
     // Remove the order from the user's orders
     check_user.orders.splice(orderIndex, 1);
-    
+
     // Save the updated user object
     await check_user.save();
 

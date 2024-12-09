@@ -26,6 +26,10 @@ import Buyer from './Components/Pages/Admin/Buyer';
 import Sellers from './Components/Pages/Admin/Sellers';
 import BuyerDetails from './Components/Pages/Admin/BuyerDetails';
 import SellerProfile from './Components/Pages/Admin/SellerDetails';
+import AllProducts from './Components/Pages/Admin/AllProducts';
+import EmailVerify from './Components/Pages/ForgotPassword/VerifyEmail';
+import ResetPassword from './Components/Pages/ForgotPassword/ResetPassword';
+import AllOrders from './Components/Pages/Admin/AllOrders';
 
 
 
@@ -34,7 +38,7 @@ function App() {
     <>
       {/* Toast notification container */}
       <ToastContainer />
-      
+
       <Router>
         <Routes>
           {/* Static routes */}
@@ -49,13 +53,18 @@ function App() {
           <Route path='/products/:id' element={<SellerProducts />} />
           <Route path='/updateProduct/:id/:p_id' element={<UpdateProduct />} />
           <Route path='/buyerDashboard/:id/:p_id/:usertype' element={<BuyerDashboard />} />
-          <Route path='/wishlist/:login/:id/:usertype' element={<WishlistContainer/>}/>
-          <Route path='/buynow/:login/:id/:usertype/:p_id/:price' element={<PlaceOrder/>}/>
-          <Route path='/orderdata/:login/:id/:usertype' element={<OrderData/>}/>
-          <Route path='/Buyer/:login/:id/:usertype' element={<Buyer/>}/>
-          <Route path='/Sellers/:login/:id/:usertype' element={<Sellers/>}/>
-          <Route path='/Buyerdetails/:login/:id/:usertype/:b_id' element={<BuyerDetails/>}/>
-          <Route path='/SellerDetails/:login/:id/:usertype/:s_id' element={<SellerProfile/>}/>
+          <Route path='/wishlist/:login/:id/:usertype' element={<WishlistContainer />} />
+          <Route path='/buynow/:login/:id/:usertype/:p_id/:price' element={<PlaceOrder />} />
+          <Route path='/orderdata/:login/:id/:usertype' element={<OrderData />} />
+          <Route path='/Buyer/:login/:id/:usertype' element={<Buyer />} />
+          <Route path='/Sellers/:login/:id/:usertype' element={<Sellers />} />
+          <Route path='/Buyerdetails/:login/:id/:usertype/:b_id' element={<BuyerDetails />} />
+          <Route path='/SellerDetails/:login/:id/:usertype/:s_id' element={<SellerProfile />} />
+          <Route path='/AllProducts/:login/:id/:usertype' element={<AllProducts />} />
+          <Route path='/AllOrders/:login/:id/:usertype' element={<AllOrders/>}/>
+          <Route path='/verifyEmail' element={<EmailVerify/>}/>
+          <Route path='/ForgotPassword' element={<ResetPassword />} />
+
 
           {/* Base route */}
           <Route path='/' element={<IndexComponent />} />

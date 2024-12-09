@@ -51,7 +51,10 @@ let user_Schema = new mongoose.Schema({
                 default: Date.now  // Sets the current date and time when an order is created
             }
         }
-    ]
+    ],
+    password_token: {
+        type: String
+    }
 })
 
 let user = mongoose.model('user_data', user_Schema);

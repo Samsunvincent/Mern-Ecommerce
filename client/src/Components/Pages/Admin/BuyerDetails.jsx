@@ -55,6 +55,9 @@ const handleSeller = useCallback(() =>{
 const handleBuyer = useCallback(() =>{
     navigate(`/Buyer/${login}/${id}/${usertype}`)
 })
+const handleProductsClick = useCallback(() =>{
+  navigate(`/AllProducts/${login}/${id}/${usertype}`)
+})
 
   return (
     <div className="bg-gray-100 font-roboto min-h-screen">
@@ -83,7 +86,7 @@ const handleBuyer = useCallback(() =>{
               </a>
             </li>
             <li>
-              <a href="/admin-orders" className="hover:text-gray-300">
+              <a href="" onClick={handleProductsClick} className="hover:text-gray-300">
                 Orders
               </a>
             </li>

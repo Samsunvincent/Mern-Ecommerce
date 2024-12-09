@@ -2,7 +2,7 @@ const user = require('../db/model/user-Model');
 const product = require('../db/model/product-model');
 const mongoose = require('mongoose');
 const usertype = require('../db/model/userType');
-const { success_function } = require('../utils/Response-Handler');
+const { success_function, error_function } = require('../utils/Response-Handler');
 const cart = require('../db/model/addtocart-Model')
 
 
@@ -138,7 +138,7 @@ exports.Buyers = async function (req, res) {
 
 
 
-exports.BuyerDetails = async function(req, res) {
+exports.BuyerDetails = async function (req, res) {
     let buyerId = req.params.b_id;
 
     // Check if buyerId is provided and valid
@@ -275,105 +275,205 @@ exports.Sellers = async function (req, res) {
 }
 
 
-exports.SellerDetails = async function(req,res){
-    let sellerId = req.params.s_id
-    if(!sellerId){
-        let response = {
+exports.SellerDetails = async function (req, res) {
+    const sellerId = req.params.s_id;
+
+    if (!sellerId) {
+        return res.status(400).send({
             success: false,
             statusCode: 400,
             message: 'Invalid or missing seller ID',
-        };
-        return res.status(response.statusCode).send(response);
+        });
     }
 
     try {
-        let checkSeller = await user.findOne({ _id: sellerId });
+        const checkSeller = await user.findById(sellerId);
 
-        // If buyer is not found, return an error
         if (!checkSeller) {
-            let response = {
+            return res.status(404).send({
                 success: false,
                 statusCode: 404,
                 message: 'User not found',
-            };
-            return res.status(response.statusCode).send(response);
+            });
         }
 
-        let orderedProducts = await product.find({ _id: { $in: checkSeller.orders.map(order => order.productId) } });
+        // Fetch ordered products
+        const orderedProducts = await product.find({
+            _id: { $in: checkSeller.orders?.map(order => order.productId) || [] },
+        });
 
-        // Return empty array if no products are found
-        if (!orderedProducts || orderedProducts.length === 0) {
-            orderedProducts = [];
-        }
+        // Fetch wishlisted products
+        const wishlistedProducts = await product.find({
+            _id: { $in: checkSeller.wishlist?.map(wishlist => wishlist.productId) || [] },
+        });
 
+        // Fetch added products by the seller
+        const addedProducts = await product.find({ sellerID: sellerId });
 
-        let wishlistedProducts = await product.find({ _id: { $in: checkSeller.wishlist.map(wishlist => wishlist.productId) } });
-
-        if (!wishlistedProducts || wishlistedProducts.length === 0) {
-            wishlistedProducts = [];
-        }
-
-
-        let cartData = await cart.findOne({ userId: checkSeller._id });
-
-        let cartedProducts = [];
-        if (cartData && cartData.items.length > 0) {
-            // For each product in the cart, fetch product details and include quantity and price
-            cartedProducts = await Promise.all(
-                cartData.items.map(async (item) => {
-                    // Fetch full product details
-                    let productDetails = await product.findById(item.productId);
-
-                    if (productDetails) {
-                        // Return product details including name, price, description, etc.
-                        return {
-                            productId: item.productId,
-                            name: productDetails.name,
-                            description: productDetails.description, // Added description
-                            price: productDetails.price,
-                            brand: productDetails.brand, // Added brand
-                            stock: productDetails.stock, // Added stock
-                            discount: productDetails.discount, // Added discount
-                            images: productDetails.images, // Added images
-                            quantity: item.quantity,
-                            totalPrice: item.price * item.quantity,
-                            imageUrl: productDetails.images.length > 0 ? `http://localhost:3000/${productDetails.images[0].url}` : '', // Use first image
-                        };
-                    } else {
-                        // In case product not found, return a fallback
-                        return {
-                            productId: item.productId,
-                            name: 'Unknown Product',
-                            description: 'No description available',
-                            price: 0,
-                            brand: 'Unknown',
-                            stock: 0,
-                            discount: '0%',
-                            images: [],
-                            quantity: item.quantity,
-                            totalPrice: 0,
-                            imageUrl: '', // No image URL
-                        };
+        // Fetch cart details
+        const cartData = await cart.findOne({ userId: sellerId });
+        const cartedProducts = await Promise.all(
+            cartData?.items.map(async (item) => {
+                const productDetails = await product.findById(item.productId);
+                return productDetails
+                    ? {
+                        productId: item.productId,
+                        name: productDetails.name,
+                        description: productDetails.description || 'No description available',
+                        price: productDetails.price || 0,
+                        brand: productDetails.brand || 'Unknown',
+                        stock: productDetails.stock || 0,
+                        discount: productDetails.discount || '0%',
+                        images: productDetails.images || [],
+                        quantity: item.quantity,
+                        totalPrice: productDetails.price * item.quantity || 0,
+                        imageUrl: productDetails.images?.[0]?.url
+                            ? `http://localhost:3000/${productDetails.images[0].url}`
+                            : '',
                     }
-                })
-            );
-        }
+                    : {
+                        productId: item.productId,
+                        name: 'Unknown Product',
+                        description: 'No description available',
+                        price: 0,
+                        brand: 'Unknown',
+                        stock: 0,
+                        discount: '0%',
+                        images: [],
+                        quantity: item.quantity,
+                        totalPrice: 0,
+                        imageUrl: '',
+                    };
+            }) || []
+        );
 
-        let response = {
+        return res.status(200).send({
             success: true,
             statusCode: 200,
-            message: 'seller data retrieved successfully',
-            data: { SellerDetails: checkSeller, orderedProducts, wishlistedProducts, cartedProducts },
-        };
-        return res.status(response.statusCode).send(response);
+            message: 'Seller data retrieved successfully',
+            data: {
+                SellerDetails: checkSeller,
+                orderedProducts,
+                wishlistedProducts,
+                cartedProducts,
+                addedProducts,
+            },
+        });
     } catch (error) {
-        let response = {
+        return res.status(500).send({
             success: false,
             statusCode: 500,
             message: 'Error fetching seller data',
             error: error.message,
-        };
+        });
+    }
+};
+
+exports.GetAllProducts = async function(req, res) {
+    try {
+        // Fetch all products
+        let AllProducts = await product.find();
+        console.log("AllProducts", AllProducts);
+
+        // Fetch seller details for each product
+        let productsWithSellers = await Promise.all(
+            AllProducts.map(async (prod) => {
+                try {
+                    let sellerDetails = await user.findOne({ _id: prod.sellerID });
+                    if (!sellerDetails) {
+                        // If the seller is not found, add a fallback message
+                        return {
+                            ...prod._doc, // Spread the product data
+                            sellerDetails: {
+                                message: "Seller not found",
+                            },
+                        };
+                    }
+                    // Add seller details to the product
+                    return {
+                        ...prod._doc, // Spread the product data
+                        sellerDetails: {
+                            name: sellerDetails.name,
+                            email: sellerDetails.email,
+                            phone_number: sellerDetails.phone_number,
+                        },
+                    };
+                } catch (error) {
+                    console.error(`Error fetching seller for product ${prod._id}:`, error);
+                    return {
+                        ...prod._doc,
+                        sellerDetails: {
+                            message: "Error fetching seller details",
+                        },
+                    };
+                }
+            })
+        );
+
+        // Send success response
+        let response = success_function({
+            success: true,
+            statusCode: 200,
+            message: "All products with sellers retrieved successfully",
+            data: productsWithSellers,
+        });
+        return res.status(response.statusCode).send(response);
+    } catch (error) {
+        console.error("Error fetching products:", error);
+
+        // Send error response
+        let response = success_function({
+            success: false,
+            statusCode: 500,
+            message: "Failed to retrieve products",
+            data: null,
+        });
         return res.status(response.statusCode).send(response);
     }
-}
+};
+
+
+exports.getAllOrders = async function (req, res) {
+    try {
+      // Aggregation to fetch all orders
+      const orders = await user.aggregate([
+        { $unwind: "$orders" }, // Flatten the orders array
+        {
+          $project: {
+            _id: 0,         // Exclude _id if not needed
+            userId: "$_id", // Include userId for reference
+            order: "$orders" // Include each order
+          }
+        }
+      ]);
+  
+      if (!orders.length) {
+        return res.status(404).json({ message: "No orders found" });
+      }
+  
+      // Now, orders contain individual orders, and each order has a 'productId'.
+      const orderProductIds = orders.map(order => order.order.productId);
+  
+      // Fetch the products that match the productIds from the orders
+      const orderedProducts = await product.find({
+        _id: { $in: orderProductIds }
+      }).populate('sellerID', 'name email');  // Use populate to get seller details
+  
+      if (orderedProducts.length > 0) {
+        // Return the orders with populated seller data
+        res.status(200).json({ orders: orderedProducts });
+      } else {
+        res.status(404).json({ message: "No products found for the orders" });
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Server error", error });
+    }
+  };
+  
+  
+  
+
+
+
 

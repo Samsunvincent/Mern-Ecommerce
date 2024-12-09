@@ -20,6 +20,10 @@ Router.get('/BuyerDetails/:b_id',setAccessControl('1'),AdminController.BuyerDeta
 Router.get('/Sellers',setAccessControl('1'),AdminController.Sellers);
 Router.get('/SellerDetails/:s_id',setAccessControl('1'),AdminController.SellerDetails);
 
+//allproducts
+Router.get('/AllProducts',setAccessControl('1'),AdminController.GetAllProducts);
+Router.get('/GetAllOrders',setAccessControl('1'),AdminController.getAllOrders)
+
 
 
 

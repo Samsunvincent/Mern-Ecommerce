@@ -42,6 +42,14 @@ export default function AdminDashBoard() {
     console.log('hello world');
     navigate(`/Buyer/${login}/${id}/${usertype}`)
    })
+
+   const handleProductsClick = useCallback(() =>{
+    navigate(`/AllProducts/${login}/${id}/${usertype}`)
+   })
+
+   const handleOrder = useCallback(() =>{
+    navigate(`/AllOrders/${login}/${id}/${usertype}`)
+   })
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
             {/* Header */}
@@ -82,11 +90,11 @@ export default function AdminDashBoard() {
                                 <i className="fas fa-users mr-4 text-lg"></i>
                                 Buyers
                             </a>
-                            <a className="flex items-center text-gray-700 hover:text-gray-900 font-medium" href="#">
+                            <a className="flex items-center text-gray-700 hover:text-gray-900 font-medium" href="#" onClick={handleOrder}>
                                 <i className="fas fa-cogs mr-4 text-lg"></i>
                                 Orders
                             </a>
-                            <a className="flex items-center text-gray-700 hover:text-gray-900 font-medium" href="#">
+                            <a className="flex items-center text-gray-700 hover:text-gray-900 font-medium" href="" onClick={handleProductsClick}>
                                 <i className="fas fa-cogs mr-4 text-lg"></i>
                                 Products
                             </a>
