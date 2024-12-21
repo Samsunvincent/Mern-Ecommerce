@@ -3,6 +3,8 @@ const { success_function, error_function } = require('../utils/Response-Handler'
 let products = require('../db/model/product-model');
 let category = require('../db/model/category');
 const user = require('../db/model/user-Model');
+const NoStockTemplate = require('../utils/email-templates/NoStock-template').outOfStockNotification
+const sendEmail = require('../utils/send-email').sendEmail
 
 
 exports.addProducts = async function (req, res) {
@@ -96,20 +98,16 @@ exports.getProducts = async function (req, res) {
     try {
         const userType = req.params.usertype ? req.params.usertype.toLowerCase() : null;
         const userId = req.params.id || null;
-
+    
         let productQuery = {};
-
-        // Fetch all products if no userType or userId is provided
-        if (!userType && !userId) {
-            productQuery = {};
-        } else if (userType === "seller" && userId) {
-            productQuery = { sellerID: { $ne: userId } }; // Exclude seller's products
+    
+        // Exclude seller's products if userType is 'seller' and userId is provided
+        if (userType === "seller" && userId) {
+            productQuery = { sellerID: { $ne: userId } }; // Exclude seller's own products
         }
-
-        
-
+    
         let productData = await products.find(productQuery);
-
+    
         if (!productData || productData.length === 0) {
             if (userType || userId) {
                 let response = error_function({
@@ -121,16 +119,19 @@ exports.getProducts = async function (req, res) {
             }
         }
 
+     
+    
         if (userId) {
             const userData = await user.findById(userId);
             let wishlistData = userData ? userData.wishlist : [];
-
+    
+            // Add wishlist information to the products
             productData = productData.map(product => {
                 let isWishlisted = wishlistData.some(wishlist => wishlist.productId.toString() === product._id.toString());
                 return { ...product.toObject(), isWishlisted };
             });
         }
-
+    
         let response = success_function({
             success: true,
             statusCode: 200,
@@ -140,7 +141,7 @@ exports.getProducts = async function (req, res) {
         return res.status(response.statusCode).send(response);
     } catch (error) {
         console.error("Error:", error);
-
+    
         let response = error_function({
             success: false,
             statusCode: 400,
@@ -149,6 +150,7 @@ exports.getProducts = async function (req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
+
 
 
 

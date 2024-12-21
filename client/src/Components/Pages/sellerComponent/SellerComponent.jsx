@@ -30,9 +30,13 @@ const Seller = () => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllProducts(id, usertype);
+        const data = await getAllProducts(id, usertype); // Fetch products
+        console.log("Fetched products:", data); // Log fetched products
+
         if (Array.isArray(data)) {
-          setAllProducts(data);
+          // Filter out the seller's own products on the frontend as well
+          const filtered = data.filter((product) => product.sellerID !== id);
+          setAllProducts(filtered);
         } else {
           console.error("Fetched data is not an array:", data);
         }
@@ -109,7 +113,7 @@ const Seller = () => {
         >
           {isInWishlist ? "❤️" : "🤍"}
         </button>
-        
+
         <img
           src={`http://localhost:3000/${imageUrl}`}
           className="card-img-top w-[309.15px] h-[309.15px]"

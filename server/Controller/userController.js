@@ -10,6 +10,7 @@ const Cart = require('../db/model/addtocart-Model');
 
 const mongoose = require('mongoose');
 let orderTemplate = require('../utils/email-templates/Order-template').order
+let NoStockTemplate = require('../utils/email-templates/NoStock-template').outOfStockNotification
 const { sendEmail } = require('../utils/send-email');
 
 
@@ -969,15 +970,14 @@ exports.placeOrders = async function (req, res) {
         }
 
         let email = matchId.email;
-        console.log("email", email)
-
         let name = matchId.name;
-        console.log("name", name)
+
+        let sellerName = matchId.name;
+        
 
         // Iterate over the products array to validate and process each product
         let orderSummary = [];
         for (const { productId, quantity = 1, totalPrice } of products) {
-            // Check if productId and quantity are provided
             if (!productId || quantity <= 0) {
                 let response = error_function({
                     success: false,
@@ -1005,6 +1005,11 @@ exports.placeOrders = async function (req, res) {
                     statusCode: 400,
                     message: `Insufficient stock for product ID: ${matchProduct.name}. Available stock is ${matchProduct.stock}`,
                 });
+                // Send email to the seller if the product is out of stock
+              
+                let  productName = matchProduct.name
+                let noStockTemplate = await NoStockTemplate(sellerName,productName);
+                await sendEmail(email, "outOfStockNotification", noStockTemplate);
                 return res.status(response.statusCode).send(response);
             }
 
@@ -1034,7 +1039,6 @@ exports.placeOrders = async function (req, res) {
             await matchProduct.save();
 
             // Add to order summary
-            // Add to order summary
             orderSummary.push({
                 productId,
                 productName: matchProduct.name,
@@ -1044,13 +1048,15 @@ exports.placeOrders = async function (req, res) {
                     ? existingOrder.totalPrice
                     : calculatedTotalPrice,
             });
-
         }
 
         if (orderSummary) {
             let placeOrderEmalTemplate = await orderTemplate(name, orderSummary);
-            await sendEmail(email, "orderConfirmation", placeOrderEmalTemplate)
+            await sendEmail(email, "orderConfirmation", placeOrderEmalTemplate);
         }
+
+        // Clear the cart for the user after placing the order
+        matchId.cart = [];
 
         // Save the updated user data
         await matchId.save();
@@ -1074,6 +1080,7 @@ exports.placeOrders = async function (req, res) {
         return res.status(response.statusCode).send(response);
     }
 };
+
 
 exports.getOrders = async function (req, res) {
     let id = req.params.id;

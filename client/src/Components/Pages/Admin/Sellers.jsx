@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SellerRoute from "../../functionalities/AdminFunctionalities/SellersRoute";
+import BlockorUnblock from "../../functionalities/AdminFunctionalities/BlockorUnBlockRoute";
 
 export default function Sellers() {
     const navigate = useNavigate();
     const { login, id, usertype } = useParams();
     const [sellerData, setSellerData] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [sellerId, setSellerId] = useState(null);
+    const [description, setDescription] = useState("");
     const token = localStorage.getItem(login);
 
     const handleDashBoard = useCallback(() => {
@@ -31,13 +35,33 @@ export default function Sellers() {
         fetchSellerData();
     }, [token]);
 
-    const handleBuyer = useCallback(() =>{
-        navigate(`/Buyer/${login}/${id}/${usertype}`)
-    })
+    const handleBuyer = useCallback(() => {
+        navigate(`/Buyer/${login}/${id}/${usertype}`);
+    });
 
-    const handleSellerDetails = useCallback((s_id) =>{
-        navigate(`/SellerDetails/${login}/${id}/${usertype}/${s_id}`)
-    })
+    const handleSellerDetails = useCallback((s_id) => {
+        navigate(`/SellerDetails/${login}/${id}/${usertype}/${s_id}`);
+    });
+
+    const handleBlockButton = useCallback((sellerid) => {
+        setSellerId(sellerid);
+        setIsModalOpen(true);
+    });
+
+    const handleBlockConfirm = async () => {
+        const blockorunblock = await BlockorUnblock(sellerId, description, token);
+        console.log("block or unblock", blockorunblock);
+        setIsModalOpen(false);
+    };
+
+    const handleCancel = () => {
+        setIsModalOpen(false);
+        setDescription(""); // Clear the description field on cancel
+    };
+
+    const handleSellerDashboard = (sellerId) => {
+        navigate(`/SellerDashboard/${login}/${id}/${usertype}/${sellerId}`);
+    };
 
     return (
         <div className="bg-gray-100 font-roboto min-h-screen">
@@ -97,7 +121,7 @@ export default function Sellers() {
                                     <tr
                                         key={seller._id}
                                         className="border-b border-gray-200 hover:bg-gray-100"
-                                        onClick={() =>handleSellerDetails(seller._id)}
+                                        onClick={() => handleSellerDetails(seller._id)}
                                     >
                                         <td className="py-3 px-6 text-left whitespace-nowrap">
                                             {index + 1}
@@ -115,12 +139,35 @@ export default function Sellers() {
                                                 : "No Address"}
                                         </td>
                                         <td className="py-3 px-6 text-left">
-                                            <button className="text-green-500 hover:text-green-700">
-                                                <i className="fas fa-unlock" /> Block
-                                            </button>
-                                            <button className="text-red-500 hover:text-red-700 ml-2">
-                                                <i className="fas fa-trash" /> Delete
-                                            </button>
+                                            {seller.user_Status === "block" ? (
+                                                <>
+                                                    <button
+                                                        className="text-green-500 hover:text-green-700"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleBlockButton(seller._id);
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-lock" /> Unblock
+                                                    </button>
+                                                    <button
+                                                        className="text-blue-500 hover:text-blue-700 ml-2"
+                                                        onClick={() => handleSellerDashboard(seller._id)}
+                                                    >
+                                                        <i className="fas fa-tachometer-alt" /> Seller Dashboard
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    className="text-red-500 hover:text-red-700"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleBlockButton(seller._id);
+                                                    }}
+                                                >
+                                                    <i className="fas fa-unlock" /> Block
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -135,6 +182,40 @@ export default function Sellers() {
                     </table>
                 </div>
             </div>
+
+            {isModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+                    <div className="bg-white rounded-lg p-6 shadow-lg w-96">
+                        <h2 className="text-xl font-bold mb-4">
+                            {sellerData.find(seller => seller._id === sellerId)?.user_Status === "block"
+                                ? "Unblock Seller"
+                                : "Block Seller"}
+                        </h2>
+                        <textarea
+                            className="w-full border border-gray-300 rounded p-2 mb-4"
+                            placeholder="Enter reason for blocking"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                                onClick={handleCancel}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                onClick={handleBlockConfirm}
+                            >
+                                {sellerData.find(seller => seller._id === sellerId)?.user_Status === "block"
+                                    ? "Unblock"
+                                    : "Block"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

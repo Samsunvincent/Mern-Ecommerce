@@ -115,16 +115,28 @@ export default function PlaceOrder() {
                     // Success toast
                     toast.success(order.message || 'Order placed successfully!');
                 } else {
+                    // Failure toast with custom position (bottom-center)
                     toast.error(order.message || 'Something went wrong');
                 }
             } catch (error) {
                 console.error("Error placing the order", error);
-                toast.error(error.message || 'Something went wrong');
+    
+                // If the error is related to insufficient stock, display the message at the bottom center
+                if (error.response && error.response.status === 400 && error.response.data) {
+                    const serverMessage = error.response.data.message || 'Something went wrong';
+                    toast.error(serverMessage, {
+                        position: toast.POSITION.BOTTOM_CENTER // Display toast at the bottom center
+                    });
+                } else {
+                    // Default error handling for any other errors
+                    toast.error(error.message || 'Something went wrong');
+                }
             }
         };
     
         postOrder();
     }, [finalPrice, quantity, p_id, id]);
+    
     
 
     return (

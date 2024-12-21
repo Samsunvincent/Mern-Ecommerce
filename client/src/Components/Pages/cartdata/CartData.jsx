@@ -15,7 +15,7 @@ export default function CartData() {
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showPrompt, setShowPrompt] = useState(false);
-    const navigate = useNavigate(); // Corrected navigate usage
+    const navigate = useNavigate();
     const { login, id, usertype } = useParams();
 
     // Fetch cart data
@@ -23,7 +23,6 @@ export default function CartData() {
         const fetchCartData = async () => {
             try {
                 const response = await GetCartData(id);
-                console.log("RESPONSE", response);
                 setCartData(response);
                 calculateTotalAmount(response);
             } catch (error) {
@@ -37,14 +36,18 @@ export default function CartData() {
 
     // Fetch addresses
     useEffect(() => {
+        let isMounted = true; // Flag to track the first render
+
         const fetchAddresses = async () => {
             try {
                 const fetchedAddresses = await FetchAddress(id);
-                if (fetchedAddresses && fetchedAddresses.length > 0) {
-                    setAddresses(fetchedAddresses);
-                    setSelectedAddress(fetchedAddresses[0]);
-                } else {
-                    toast.warning("No addresses available.");
+                if (isMounted) {
+                    if (fetchedAddresses && fetchedAddresses.length > 0) {
+                        setAddresses(fetchedAddresses);
+                        setSelectedAddress(fetchedAddresses[0]);
+                    } else {
+                        toast.warning("No addresses available.");
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching addresses:", error);
@@ -53,15 +56,38 @@ export default function CartData() {
         };
 
         fetchAddresses();
+
+        return () => {
+            isMounted = false; // Cleanup for strict mode
+        };
     }, [id]);
 
     // Calculate total cart amount
     const calculateTotalAmount = (cartItems) => {
         const total = cartItems.reduce(
-            (acc, item) => acc + item.price * item.quantity,
+            (acc, item) => acc + item.price * (item.quantity || 1),
             0
         );
         setTotalAmount(total);
+    };
+
+    // Update quantity in the cart with stock validation
+    const handleQuantityChange = (productId, newQuantity) => {
+        const updatedCart = cartData.map((item) => {
+            if (item._id === productId) {
+                // Check if the stock is available
+                if (newQuantity <= item.stock) {
+                    return { ...item, quantity: Math.max(1, newQuantity) };
+                } else {
+                    // Show a toast error if the quantity exceeds stock
+                    toast.success(`Insufficient stock is available for ${item.name}.`);
+                    return item;
+                }
+            }
+            return item;
+        });
+        setCartData(updatedCart);
+        calculateTotalAmount(updatedCart);
     };
 
     // Handle address selection
@@ -71,7 +97,8 @@ export default function CartData() {
     };
 
     // Handle product removal from cart
-    const handleRemoveCartData = async (productId) => {
+    const handleRemoveCartData = async (productId, e) => {
+        e.stopPropagation();
         try {
             const removedDataMessage = await RemoveCartData(id, productId);
             if (removedDataMessage.success) {
@@ -88,7 +115,7 @@ export default function CartData() {
         }
     };
 
-    // Handle proceeding to payment
+    // Handle proceeding to payment with stock validation
     const handleProceedToPayment = async () => {
         if (!cartData || cartData.length === 0) {
             toast.error("Your cart is empty.");
@@ -100,30 +127,47 @@ export default function CartData() {
             return;
         }
 
+        // Validate stock for each item
+        for (let item of cartData) {
+            if (item.quantity > item.stock) {
+                toast.error(`Only ${item.stock} items are available for ${item.name}.`);
+                return;
+            }
+        }
+
         const productsToOrder = cartData.map((item) => ({
             productId: item._id,
-            quantity: item.quantity,
-            totalPrice: item.price * item.quantity,
+            quantity: item.quantity || 1,
+            totalPrice: item.price * (item.quantity || 1),
         }));
 
         try {
+            // Send the order to the backend and clear the cart on success
             const response = await Buynow(
                 { products: productsToOrder, addressId: selectedAddress._id },
                 id
             );
-            console.log("Order placed successfully:", response);
-            toast.success("Order placed successfully!");
-            setCartData([]); // Clear cart after order
-            setTotalAmount(0);
+
+            if (response && response.success) {
+                toast.success("Order placed successfully!");
+
+                // Delay the page reload to allow the toast notification to show
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000); // Delay for 2 seconds
+            }
         } catch (error) {
             console.error("Error placing order:", error);
             toast.error("Failed to place order. Please try again.");
         }
     };
 
+    // Check if there's any item in the cart with stock 0
+    const isStockAvailable = cartData.every(item => item.stock > 0);
+
     // Handle navigating to single product view
     const handleSingleView = useCallback((p_id) => {
-        navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`); // Pass the productId
+        navigate(`/singleView/${login}/${id}/${usertype}/${p_id}`);
     }, [navigate, login, id, usertype]);
 
     return (
@@ -171,7 +215,7 @@ export default function CartData() {
                                         key={index}
                                         className="flex items-center justify-between border-b pb-4"
                                         onClick={() => handleSingleView(item._id)}
-                                        style={{ cursor: "pointer" }} // Corrected the style object
+                                        style={{ cursor: "pointer" }}
                                     >
                                         <div className="flex-shrink-0 w-16 h-16">
                                             <img
@@ -186,12 +230,38 @@ export default function CartData() {
                                                 Price: ₹{item.price}
                                             </p>
                                             <p className="text-gray-500 text-xs">
-                                                Quantity: {item.quantity || 1}
+                                                Quantity:
+                                                <button
+                                                    className="px-2 py-1 bg-gray-200 text-black font-semibold rounded-l hover:bg-gray-300"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQuantityChange(item._id, (item.quantity || 1) - 1);
+                                                    }}
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="px-4 py-1 border-t border-b border-gray-300">{item.quantity || 1}</span>
+                                                <button
+                                                    className="px-2 py-1 bg-gray-200 text-black font-semibold rounded-r hover:bg-gray-300"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQuantityChange(item._id, (item.quantity || 1) + 1);
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
                                             </p>
+                                            {/* Stock Message */}
+                                            {item.stock === 0 && (
+                                                <p className="text-red-500 text-xs mt-1">No stock</p>
+                                            )}
+                                            {item.stock > 0 && item.stock <= 10 && (
+                                                <p className="text-orange-500 text-xs mt-1">Hurry, only few left !</p>
+                                            )}
                                         </div>
                                         <button
                                             className="text-red-600 underline text-sm"
-                                            onClick={() => handleRemoveCartData(item._id)}
+                                            onClick={(e) => handleRemoveCartData(item._id, e)}
                                         >
                                             Remove
                                         </button>
@@ -223,8 +293,9 @@ export default function CartData() {
                             </div>
                         </div>
                         <button
-                            className="mt-4 bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-600"
-                            onClick={handleProceedToPayment}
+                            className={`mt-4 w-full py-2 rounded ${isStockAvailable ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300 cursor-not-allowed"}`}
+                            onClick={isStockAvailable ? handleProceedToPayment : null}
+                            disabled={!isStockAvailable}
                         >
                             Proceed to Payment
                         </button>
@@ -246,10 +317,7 @@ export default function CartData() {
                                                     name="address"
                                                     value={address._id}
                                                     className="mr-2"
-                                                    checked={
-                                                        selectedAddress &&
-                                                        selectedAddress._id === address._id
-                                                    }
+                                                    checked={selectedAddress && selectedAddress._id === address._id}
                                                     onChange={() => handleAddressChange(address)}
                                                 />
                                                 {`${address.name}, ${address.street}, ${address.city}, ${address.state}, ${address.country} - ${address.pincode}`}
@@ -261,16 +329,16 @@ export default function CartData() {
                                 <p>No addresses available.</p>
                             )}
                             <button
-                                className="mt-4 bg-gray-500 text-white px-4 py-2 rounded"
+                                className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
                                 onClick={() => setShowPrompt(false)}
                             >
-                                Cancel
+                                Close
                             </button>
                         </div>
                     </div>
                 )}
             </div>
-            <ToastContainer position="bottom-center" autoClose={2000} />
+            <ToastContainer />
         </>
     );
 }

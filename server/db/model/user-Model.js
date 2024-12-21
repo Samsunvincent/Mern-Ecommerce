@@ -54,7 +54,14 @@ let user_Schema = new mongoose.Schema({
     ],
     password_token: {
         type: String
+    },
+    user_Status: {
+        type: String,
+        enum: ["block", "unblock"], // Array of valid values
+        default: "unblock"         // Default value set to "unblock"
     }
+    
+    
 })
 
 let user = mongoose.model('user_data', user_Schema);

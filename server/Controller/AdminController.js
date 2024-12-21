@@ -369,7 +369,7 @@ exports.SellerDetails = async function (req, res) {
     }
 };
 
-exports.GetAllProducts = async function(req, res) {
+exports.GetAllProducts = async function (req, res) {
     try {
         // Fetch all products
         let AllProducts = await product.find();
@@ -435,44 +435,101 @@ exports.GetAllProducts = async function(req, res) {
 
 exports.getAllOrders = async function (req, res) {
     try {
-      // Aggregation to fetch all orders
-      const orders = await user.aggregate([
-        { $unwind: "$orders" }, // Flatten the orders array
-        {
-          $project: {
-            _id: 0,         // Exclude _id if not needed
-            userId: "$_id", // Include userId for reference
-            order: "$orders" // Include each order
-          }
+        // Aggregation to fetch all orders
+        const orders = await user.aggregate([
+            { $unwind: "$orders" }, // Flatten the orders array
+            {
+                $project: {
+                    _id: 0,         // Exclude _id if not needed
+                    userId: "$_id", // Include userId for reference
+                    order: "$orders" // Include each order
+                }
+            }
+        ]);
+
+        if (!orders.length) {
+            return res.status(404).json({ message: "No orders found" });
         }
-      ]);
-  
-      if (!orders.length) {
-        return res.status(404).json({ message: "No orders found" });
-      }
-  
-      // Now, orders contain individual orders, and each order has a 'productId'.
-      const orderProductIds = orders.map(order => order.order.productId);
-  
-      // Fetch the products that match the productIds from the orders
-      const orderedProducts = await product.find({
-        _id: { $in: orderProductIds }
-      }).populate('sellerID', 'name email');  // Use populate to get seller details
-  
-      if (orderedProducts.length > 0) {
-        // Return the orders with populated seller data
-        res.status(200).json({ orders: orderedProducts });
-      } else {
-        res.status(404).json({ message: "No products found for the orders" });
-      }
+
+        // Now, orders contain individual orders, and each order has a 'productId'.
+        const orderProductIds = orders.map(order => order.order.productId);
+
+        // Fetch the products that match the productIds from the orders
+        const orderedProducts = await product.find({
+            _id: { $in: orderProductIds }
+        }).populate('sellerID', 'name email');  // Use populate to get seller details
+
+        if (orderedProducts.length > 0) {
+            // Return the orders with populated seller data
+            res.status(200).json({ orders: orderedProducts });
+        } else {
+            res.status(404).json({ message: "No products found for the orders" });
+        }
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      res.status(500).json({ message: "Server error", error });
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ message: "Server error", error });
     }
-  };
-  
-  
-  
+};
+
+exports.BlockOrUnBlock = async function (req, res) {
+    try {
+        const userId = req.params.id;
+        const description = req.params.description;
+
+        // Validate required parameters
+        if (!userId) {
+            return res.status(400).send({
+                success: false,
+                statusCode: 400,
+                message: "User ID is required"
+            });
+        }
+
+        if (!description) {
+            return res.status(400).send({
+                success: false,
+                statusCode: 400,
+                message: "Description is required"
+            });
+        }
+
+        // Find user by ID
+        const findUser = await user.findById(userId);
+        if (!findUser) {
+            return res.status(404).send({
+                success: false,
+                statusCode: 404,
+                message: "User not found"
+            });
+        }
+
+        // Toggle user status
+        const newStatus = findUser.user_Status === "block" ? "unblock" : "block";
+        findUser.user_Status = newStatus;
+
+        // Update the user's status in the database
+        await findUser.save();
+
+        // Send a response with the updated status and description
+        return res.status(200).send({
+            success: true,
+            statusCode: 200,
+            message: `User has been ${newStatus}`,
+            description: newStatus === "block" ? description : null, // Description is only relevant when blocking
+            userStatus: newStatus
+        });
+    } catch (error) {
+        // Handle unexpected errors
+        return res.status(500).send({
+            success: false,
+            statusCode: 500,
+            message: "An error occurred",
+            error: error.message
+        });
+    }
+};
+
+
 
 
 

@@ -24,6 +24,9 @@ Router.get('/SellerDetails/:s_id',setAccessControl('1'),AdminController.SellerDe
 Router.get('/AllProducts',setAccessControl('1'),AdminController.GetAllProducts);
 Router.get('/GetAllOrders',setAccessControl('1'),AdminController.getAllOrders)
 
+//block or unblock
+Router.put('/BlockOrUnBlock/:id/:description',setAccessControl('1'),AdminController.BlockOrUnBlock)
+
 
 
 

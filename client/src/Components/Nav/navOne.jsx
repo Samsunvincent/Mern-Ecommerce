@@ -1,6 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCallback, useEffect } from "react";
 import Logout from "../functionalities/Logout";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ');
@@ -31,8 +33,8 @@ export default function Nav() {
         // Navigate to Seller Dashboard
         if (login && usertype === "Seller") {
             navigate(`/sellerDashboard/${login}/${id}/${usertype}`);
-        }else if(login && usertype === "Buyer"){
-            navigate(`/buyerDashboard/${login}/${id}/${usertype}`)
+        } else if (login && usertype === "Buyer") {
+            navigate(`/buyerDashboard/${login}/${id}/${usertype}`);
         }
     }, [navigate, usertype, id, login]);
 
@@ -40,17 +42,21 @@ export default function Nav() {
         if (login) {
             navigate(`/getcartdata/${login}/${id}/${usertype}`);
         } else {
-            alert("Please log in to access the cart.");
+            toast.error("Please log in to access the cart."); // Replaced alert with toast
         }
     }, [navigate, usertype, id, login]);
 
-    const handleWishList = useCallback(() =>{
-        navigate(`/wishlist/${login}/${id}/${usertype}`)
-    })
+    const handleWishList = useCallback(() => {
+        navigate(`/wishlist/${login}/${id}/${usertype}`);
+    });
 
-    const handleOrder = useCallback(() =>{
-        navigate(`/orderdata/${login}/${id}/${usertype}`)
-    })
+    const handleOrder = useCallback(() => {
+        navigate(`/orderdata/${login}/${id}/${usertype}`);
+    });
+
+    const handleHome = useCallback(() => {
+        navigate('/');
+    });
 
     return (
         <>
@@ -61,6 +67,7 @@ export default function Nav() {
                         src="https://img.icons8.com/?size=100&id=24934&format=png&color=000000"
                         alt="Logo"
                         className="jordan-sizing"
+                        onClick={handleHome}
                     />
                     <ul className="list-decoration">
                         <li id="deliveryto">Delivery to</li>
