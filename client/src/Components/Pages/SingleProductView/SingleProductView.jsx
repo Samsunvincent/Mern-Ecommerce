@@ -4,6 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import Nav from "../../Nav/navOne"; // Only display this for non-admin users
 import NavTwo from "../../Nav/navTwo";
 import AddToCart from "../../functionalities/addToCart";
+import { toast } from "react-toastify";
+
 
 export default function SingleProductView() {
     const [singleData, setSingleData] = useState(null); // Store fetched product data
@@ -39,34 +41,46 @@ export default function SingleProductView() {
     const handleAddToCart = useCallback(async (p_id, price) => {
         try {
             const { id, login, usertype } = params;
-
+    
             const data = {
                 userId: id,
                 productId: p_id,
                 price,
             };
-
+    
             const response = await AddToCart(data);
-
+    
             console.log("API Response:", response); // Log the entire response
-
+    
             // Check if the response has the success field
             if (response && response.success) {
                 console.log("Item successfully added to cart:", response);
-                alert(`Item added to cart. Total Price: ${response.totalPrice}`);
+                toast.success(`Item added to cart. Total Price: ₹${response.totalPrice}`);
                 navigate(`/getcartdata/${login}/${id}/${usertype}`);
             } else {
                 console.error("Error adding item to cart:", response?.message || "Unknown error");
-                alert(`Error: ${response?.message || "Unknown error"}`);
+                toast.error(response?.message || "An error occurred while adding the item to the cart.");
             }
+            
+            
         } catch (error) {
             console.error("Exception in handleAddToCart:", error);
-            alert("An unexpected error occurred while adding the item to the cart.");
+            // Check if login is undefined or invalid
+            toast.error(login === "undefined" || !login ? "Please login to continue" : "An unexpected error occurred.");
+            navigate(`/Login`);
         }
     }, [params, navigate]);
+    
 
     const handleBuyNow = useCallback((p_id, price) => {
-        navigate(`/buynow/${login}/${id}/${usertype}/${p_id}/${price}`);
+
+        if(login === "undefined"){
+            toast.error("Please login to continue");
+            navigate(`/Login`);
+        }else{
+
+            navigate(`/buynow/${login}/${id}/${usertype}/${p_id}/${price}`);
+        }
     });
 
     return (
@@ -151,49 +165,50 @@ export default function SingleProductView() {
                                     )}
                                 </div>
 
-                                {/* Conditionally Render Add to Cart and Buy Now buttons */}
-                                {usertype !== "Admin" && login!=="undefined" && (
-                                    <div className="d-flex gap-5 pt-4">
-                                        <div>
-                                            <button
-                                                onClick={() =>
-                                                    handleAddToCart(
-                                                        singleData.product._id,
-                                                        singleData.product.price
-                                                    )
-                                                }
-                                                className="p-3"
-                                                style={{
-                                                    width: "224.16px",
-                                                    height: "56px",
-                                                    backgroundColor: "rgb(255,159,0)",
-                                                    border: "none",
-                                                }}
-                                            >
-                                                Add to cart
-                                            </button>
-                                        </div>
-                                        <div>
-                                            <button
-                                                className="p-3"
-                                                style={{
-                                                    width: "224.16px",
-                                                    height: "56px",
-                                                    backgroundColor: "rgb(251,100,27)",
-                                                    border: "none",
-                                                }}
-                                                onClick={() =>
-                                                    handleBuyNow(
-                                                        singleData.product._id,
-                                                        singleData.product.price
-                                                    )
-                                                }
-                                            >
-                                                Buy now
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                               {/* Conditionally Render Add to Cart and Buy Now buttons */}
+{usertype !== "Admin" && (
+    <div className="d-flex gap-5 pt-4">
+        <div>
+            <button
+                onClick={() =>
+                    handleAddToCart(
+                        singleData.product._id,
+                        singleData.product.price
+                    )
+                }
+                className="p-3"
+                style={{
+                    width: "224.16px",
+                    height: "56px",
+                    backgroundColor: "rgb(255,159,0)",
+                    border: "none",
+                }}
+            >
+                Add to cart
+            </button>
+        </div>
+        <div>
+            <button
+                className="p-3"
+                style={{
+                    width: "224.16px",
+                    height: "56px",
+                    backgroundColor: "rgb(251,100,27)",
+                    border: "none",
+                }}
+                onClick={() =>
+                    handleBuyNow(
+                        singleData.product._id,
+                        singleData.product.price
+                    )
+                }
+            >
+                Buy now
+            </button>
+        </div>
+    </div>
+)}
+
                             </div>
                         ) : (
                             <div>Loading product details...</div>
