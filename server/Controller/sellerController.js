@@ -3,6 +3,7 @@ const { success_function, error_function } = require('../utils/Response-Handler'
 let products = require('../db/model/product-model');
 let category = require('../db/model/category');
 const user = require('../db/model/user-Model');
+const { get } = require('mongoose');
 const NoStockTemplate = require('../utils/email-templates/NoStock-template').outOfStockNotification
 const sendEmail = require('../utils/send-email').sendEmail
 
@@ -98,6 +99,8 @@ exports.getProducts = async function (req, res) {
     try {
         const userType = req.params.usertype ? req.params.usertype.toLowerCase() : null;
         const userId = req.params.id || null;
+        console.log("UserType from the getProducts function:" , userType);
+        console.log("userId from the getProducts function: ,", userId);
     
         let productQuery = {};
     

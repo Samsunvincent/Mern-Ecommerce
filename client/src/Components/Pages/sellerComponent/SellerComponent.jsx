@@ -7,8 +7,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
 import FooterComponent from "../../Footer/footerComponent";
-import Wishlist from "../../functionalities/WishlistRoute"; // Import your Wishlist function
-import { toast } from "react-toastify"; // Import Toastify
+import Wishlist from "../../functionalities/WishlistRoute";
+import { toast } from "react-toastify";
 
 const slides = [
   { imgSrc: "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/398ef080b952d576.jpg?q=20", alt: "Slide 1" },
@@ -21,21 +21,18 @@ const slides = [
 const Seller = () => {
   const { id, usertype, login } = useParams();
   const [allProducts, setAllProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [wishlist, setWishlist] = useState([]); // Track wishlist state
+  const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const data = await getAllProducts(id, usertype); // Fetch products
-        console.log("Fetched products:", data); // Log fetched products
+        const data = await getAllProducts(id, usertype);
 
         if (Array.isArray(data)) {
-          // Filter out the seller's own products on the frontend as well
-          const filtered = data.filter((product) => product.sellerID !== id);
+          const filtered = usertype === "seller" ? data.filter((product) => product.sellerID !== id) : data;
           setAllProducts(filtered);
         } else {
           console.error("Fetched data is not an array:", data);
@@ -60,31 +57,22 @@ const Seller = () => {
   const handleWishlistToggle = async (productId, event) => {
     event.stopPropagation();
 
-    // Check if the user is logged in (i.e., the 'login' parameter should be present)
     if (!login) {
       toast.error("Please log in to continue!");
       return;
     }
 
     try {
-      // Make the API call to add/remove from wishlist
       await Wishlist(id, productId);
+      const updatedWishlist = wishlist.includes(productId)
+        ? wishlist.filter((id) => id !== productId)
+        : [...wishlist, productId];
 
-      // Toggle the wishlist state in UI
-      if (wishlist.includes(productId)) {
-        // If product is in wishlist, remove it
-        const updatedWishlist = wishlist.filter((id) => id !== productId);
-        setWishlist(updatedWishlist);
-        toast.success("Removed from wishlist!", { position: "bottom-center" });
-      } else {
-        // If product is not in wishlist, add it
-        const updatedWishlist = [...wishlist, productId];
-        setWishlist(updatedWishlist);
-        toast.success("Added to wishlist!", { position: "bottom-center" });
-      }
+      setWishlist(updatedWishlist);
+      toast.success(wishlist.includes(productId) ? "Removed from wishlist!" : "Added to wishlist!");
     } catch (error) {
-      console.error("Error adding/removing product from wishlist:", error);
-      toast.error("Something went wrong!", { position: "bottom-center" });
+      console.error("Error updating wishlist:", error);
+      toast.error("Something went wrong!");
     }
   };
 
@@ -95,7 +83,6 @@ const Seller = () => {
     return (
       <div
         className="card cursor-pointer"
-        key={product._id}
         onClick={() => navigate(`/singleView/${login}/${id}/${usertype}/${product._id}`)}
       >
         <button
@@ -108,12 +95,11 @@ const Seller = () => {
             border: "none",
             cursor: "pointer",
             fontSize: "24px",
-            color: isInWishlist ? "red" : "gray", // Heart color based on wishlist status
+            color: isInWishlist ? "red" : "gray",
           }}
         >
           {isInWishlist ? "❤️" : "🤍"}
         </button>
-
         <img
           src={`http://localhost:3000/${imageUrl}`}
           className="card-img-top w-[309.15px] h-[309.15px]"
@@ -129,63 +115,52 @@ const Seller = () => {
     );
   };
 
+  const filterProducts = (condition) => {
+    return allProducts.filter(condition);
+  };
+
   const renderProducts = (products) =>
-    products.length > 0 ? (
-      products.map((product) => <ProductCard key={product._id} product={product} />)
-    ) : (
-      <p>No products found.</p>
-    );
+    products.length > 0 ? products.map((product) => <ProductCard key={product._id} product={product} />) : <p>No products found.</p>;
 
   return (
     <>
       <Nav />
-      <NavTwo setFilteredProducts={setFilteredProducts} />
+      <NavTwo />
 
       <div className="container-fluid">
-        <div className="row">
-          <div className="col-12" id="mainContent">
-            <div className="swiper-container">
-              <Swiper
-                modules={[Autoplay]}
-                spaceBetween={10}
-                slidesPerView={1}
-                autoplay={{
-                  delay: 3000,
-                  disableOnInteraction: false,
-                }}
-                loop={true}
-              >
-                {slides.map((slide, index) => (
-                  <SwiperSlide key={index}>
-                    <img src={slide.imgSrc} alt={slide.alt} />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
+        <Swiper modules={[Autoplay]} spaceBetween={10} slidesPerView={1} autoplay={{ delay: 3000 }} loop>
+          {slides.map((slide, index) => (
+            <SwiperSlide key={index}>
+              <img src={slide.imgSrc} alt={slide.alt} />
+            </SwiperSlide>
+          ))}
+        </Swiper>
 
-            <div className="text-center p-5 fs-2 fw-bolder" id="featured">
-              FEATURED
-            </div>
-            <div id="productsContainer" className="product-card container">
-              {isLoading ? <div>Loading...</div> : renderProducts(filteredProducts.length ? filteredProducts : allProducts)}
-            </div>
-
-            <div className="text-center p-5 fs-2 fw-bolder" id="budget">
-              BUDGET PRODUCTS
-            </div>
-            <div className="product-card container">
-              {renderProducts(allProducts.filter((product) => product.price < 1000))}
-            </div>
-
-            <div className="text-center p-5 fs-2 fw-bolder" id="newarrivals">
-              NEW ARRIVALS
-            </div>
-            <div className="product-card container">
-              {renderProducts(allProducts.slice(-5).reverse())}
-            </div>
-          </div>
+        <div className="text-center p-5 fs-2 fw-bolder">FEATURED</div>
+        <div className="product-card container">
+          {isLoading ? <div>Loading...</div> : renderProducts(allProducts)}
         </div>
+
+        <div className="text-center p-5 fs-2 fw-bolder">BUDGET PRODUCTS</div>
+        <div className="product-card container">
+          {isLoading ? <div>Loading...</div> : renderProducts(filterProducts((product) => product.price <= 1000))}
+        </div>
+
+        <div className="text-center p-5 fs-2 fw-bolder">NEW ARRIVALS</div>
+        <div className="product-card container">
+          {isLoading ? (
+            <div>Loading...</div>
+          ) : (
+            renderProducts(
+              allProducts
+                .slice(-5) // Select the last 5 products
+                .reverse() // Reverse to show the most recent first
+            )
+          )}
+        </div>
+
       </div>
+
       <FooterComponent />
     </>
   );

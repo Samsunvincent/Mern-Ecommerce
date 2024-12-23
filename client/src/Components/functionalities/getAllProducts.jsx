@@ -4,10 +4,13 @@ const getAllProducts = async function (id, usertype) {
     try {
         // Construct the URL dynamically based on the provided parameters
         let url = "http://localhost:3000/getProducts";
-        if (usertype || id) {
-            url += "/";
-            if (id) url += `${id}`;
-            if (usertype) url += `/${usertype}`;
+        
+        if (id && usertype) {
+            url += `/${id}/${usertype}`;
+        } else if (id) {
+            url += `/${id}`;
+        } else if (usertype) {
+            url += `/${usertype}`;
         }
 
         const response = await axios.get(url, {
